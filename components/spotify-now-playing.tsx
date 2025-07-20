@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface SpotifyData {
   song: string;
@@ -12,10 +13,11 @@ interface SpotifyData {
 
 export function SpotifyNowPlaying() {
   const [spotifyData, setSpotifyData] = useState<SpotifyData | null>(null);
-  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
   const DISCORD_ID = "202109343678726144";
 
-  const connectWebSocket = () => {
+  const connectWebSocket = useCallback(() => {
+    const socket = socketRef.current;
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
       console.log("WebSocket already open or connecting.");
       return;
@@ -23,7 +25,7 @@ export function SpotifyNowPlaying() {
 
     console.log("Attempting to connect to Lanyard WebSocket...");
     const ws = new WebSocket("wss://api.lanyard.rest/socket");
-    setSocket(ws);
+    socketRef.current = ws;
 
     ws.onopen = () => {
       console.log("Connected to Lanyard WebSocket");
@@ -32,6 +34,7 @@ export function SpotifyNowPlaying() {
 
     ws.onclose = () => {
       console.log("Disconnected from Lanyard WebSocket");
+      socketRef.current = null;
       setTimeout(connectWebSocket, 5000);
     };
 
@@ -75,7 +78,7 @@ export function SpotifyNowPlaying() {
           break;
       }
     };
-  };
+  }, []);
 
   useEffect(() => {
     connectWebSocket();
@@ -83,6 +86,7 @@ export function SpotifyNowPlaying() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         console.log("Page became visible, checking WebSocket status.");
+        const socket = socketRef.current;
         if (!socket || socket.readyState === WebSocket.CLOSED) {
           console.log("WebSocket is closed or null, attempting to reconnect.");
           connectWebSocket();
@@ -95,13 +99,14 @@ export function SpotifyNowPlaying() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      const socket = socketRef.current;
       if (socket) {
         console.log("Closing WebSocket connection.");
         socket.close();
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [connectWebSocket]);
 
   if (!spotifyData) {
     return null;
@@ -119,10 +124,12 @@ export function SpotifyNowPlaying() {
         className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm transition-colors"
       >
         <div className="relative h-14 w-14 overflow-hidden rounded-md shadow-inner">
-          <img
+          <Image
             src={spotifyData.albumArt}
             alt={`${spotifyData.song} album art`}
-            className="h-full w-full object-cover"
+            fill
+            sizes="56px"
+            className="object-cover"
           />
         </div>
         <div>

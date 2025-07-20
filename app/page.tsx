@@ -155,7 +155,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="mb-4 text-zinc-300"
             >
-              Hi! I'm Joseph Kerper, a passionate software engineer with a focus
+              Hi! I&apos;m Joseph Kerper, a passionate software engineer with a focus
               on building functional, visually appealing, and user-friendly
               applications.
             </motion.p>
@@ -166,7 +166,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="mb-4 text-zinc-300"
             >
-              I'm an incoming freshman at San Jose State University, where I will be
+              I&apos;m an incoming freshman at San Jose State University, where I will be
               expanding my knowledge and skills in software development,
               algorithms, and computer science principles.
             </motion.p>
@@ -177,7 +177,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="text-zinc-300"
             >
-              When I'm not coding, you can find me tinkering with hardware and hanging out with my friends.
+              When I&apos;m not coding, you can find me tinkering with hardware and hanging out with my friends.
             </motion.p>
           </div>
         </div>
