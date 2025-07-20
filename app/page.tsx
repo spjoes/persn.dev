@@ -5,7 +5,7 @@ import { FlipCard } from "@/components/flip-card";
 import { SocialLinks } from "@/components/social-links";
 import { ProjectCard } from "@/components/project-card";
 import { SpotifyNowPlaying } from "@/components/spotify-now-playing";
-import { CurrentTimeMobile as CurrentTimeDisplay } from "@/components/current-time-mobile";
+import { CurrentTime } from "@/components/current-time";
 
 interface Project {
   title: string;
@@ -82,7 +82,7 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.15 }}
           className="mb-8 flex justify-center"
         >
-          <CurrentTimeDisplay />
+          <CurrentTime />
         </motion.div>
         
         <motion.div
