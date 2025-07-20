@@ -42,7 +42,7 @@ export function SocialLinks() {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 p-3 text-zinc-300 transition-all hover:scale-110 hover:border-zinc-700 hover:text-white"
+            className="flex items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 p-3 text-zinc-300 transition-all hover:scale-110 hover:border-zinc-700 hover:text-white will-change-transform [backface-visibility:hidden]"
             aria-label={link.platform}
           >
             {link.icon}
