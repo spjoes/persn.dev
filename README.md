@@ -1,4 +1,4 @@
-# Persn.dev - Joseph Kerper's Personal Website
+# Persn.dev - Joey Kerper's Personal Website
 
 A modern, animated personal portfolio website built with Next.js, showcasing projects, skills, and providing real-time integrations.
 
