@@ -22,7 +22,7 @@ export function FlipCard({ frontImage, backImage, alt }: FlipCardProps) {
       <motion.div
         className="relative h-full w-full preserve-3d transition-all duration-700"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.5 }}
       >
         <div className="absolute h-full w-full backface-hidden overflow-hidden rounded-xl border border-zinc-700 bg-zinc-800">
           {frontImage && (

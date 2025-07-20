@@ -121,7 +121,7 @@ export function SpotifyNowPlaying() {
     >
       <motion.div
         whileHover={{ scale: 1.02 }}
-        className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm transition-colors"
+        className="flex items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900 p-4 shadow-sm transition-colors duration-300 hover:shadow-md hover:border-zinc-700"
       >
         <div className="relative h-14 w-14 overflow-hidden rounded-md shadow-inner">
           <Image

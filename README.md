@@ -74,4 +74,4 @@ This is a personal portfolio website, but if you find bugs or have suggestions, 
 
 ---
 
-Built with ❤️ by Joseph Kerper
+Built with ❤️ by Joey Kerper
