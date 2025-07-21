@@ -19,7 +19,6 @@ export function Header() {
         element.scrollIntoView({ behavior: "smooth" });
       }
     }
-    // On other pages, we allow the default Link behavior to navigate to the hash
   };
 
   return (
