@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function Header() {
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
+
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
     e.preventDefault();
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+    
+    if (isHomePage) {
+      // If we're on the home page, scroll to the section
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // If we're not on the home page, navigate to home page with hash
+      window.location.href = `/#${sectionId}`;
     }
   };
 
@@ -22,7 +33,7 @@ export function Header() {
             <ul className="flex space-x-6">
               <li>
                 <a
-                  href="#about"
+                  href="/#about"
                   onClick={(e) => scrollToSection(e, "about")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
@@ -31,7 +42,7 @@ export function Header() {
               </li>
               <li>
                 <a
-                  href="#projects"
+                  href="/#projects"
                   onClick={(e) => scrollToSection(e, "projects")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
@@ -39,8 +50,16 @@ export function Header() {
                 </a>
               </li>
               <li>
+                <Link
+                  href="/blog"
+                  className="text-sm font-medium transition hover:text-zinc-400"
+                >
+                  Blog
+                </Link>
+              </li>
+              <li>
                 <a
-                  href="#contact"
+                  href="/#contact"
                   onClick={(e) => scrollToSection(e, "contact")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
