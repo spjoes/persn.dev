@@ -35,7 +35,7 @@ async function getBlogPosts(): Promise<BlogPost[]> {
     );
 
     return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  } catch (error) {
+  } catch {
     console.log('No posts directory found, returning empty array');
     return [];
   }

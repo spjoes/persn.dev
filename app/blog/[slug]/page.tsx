@@ -1,3 +1,4 @@
+import React from 'react';
 import { readdir, readFile } from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
@@ -28,7 +29,7 @@ async function getBlogPost(slug: string) {
       metadata: data as BlogPostMetadata,
       content,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -43,7 +44,7 @@ export async function generateStaticParams() {
       .map((filename) => ({
         slug: filename.replace('.mdx', ''),
       }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -65,38 +66,38 @@ export async function generateMetadata({ params }: BlogPostProps) {
 }
 
 const components = {
-  h1: (props: any) => (
+  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h1 className="mb-6 text-3xl font-bold tracking-tight md:text-4xl" {...props} />
   ),
-  h2: (props: any) => (
+  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h2 className="mb-4 mt-8 text-2xl font-semibold tracking-tight md:text-3xl" {...props} />
   ),
-  h3: (props: any) => (
+  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
     <h3 className="mb-3 mt-6 text-xl font-semibold tracking-tight md:text-2xl" {...props} />
   ),
-  p: (props: any) => <p className="mb-4 leading-7 text-zinc-300" {...props} />,
-  ul: (props: any) => <ul className="mb-4 ml-6 list-disc space-y-2" {...props} />,
-  ol: (props: any) => <ol className="mb-4 ml-6 list-decimal space-y-2" {...props} />,
-  li: (props: any) => <li className="leading-7 text-zinc-300" {...props} />,
-  blockquote: (props: any) => (
+  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => <p className="mb-4 leading-7 text-zinc-300" {...props} />,
+  ul: (props: React.HTMLAttributes<HTMLUListElement>) => <ul className="mb-4 ml-6 list-disc space-y-2" {...props} />,
+  ol: (props: React.HTMLAttributes<HTMLOListElement>) => <ol className="mb-4 ml-6 list-decimal space-y-2" {...props} />,
+  li: (props: React.HTMLAttributes<HTMLLIElement>) => <li className="leading-7 text-zinc-300" {...props} />,
+  blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => (
     <blockquote 
       className="mb-4 border-l-4 border-zinc-600 pl-4 italic text-zinc-400" 
       {...props} 
     />
   ),
-  code: (props: any) => (
+  code: (props: React.HTMLAttributes<HTMLElement>) => (
     <code 
       className="rounded bg-zinc-800 px-1 py-0.5 text-sm font-mono text-zinc-300" 
       {...props} 
     />
   ),
-  pre: (props: any) => (
+  pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
     <pre 
       className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm" 
       {...props} 
     />
   ),
-  a: (props: any) => (
+  a: (props: React.HTMLAttributes<HTMLAnchorElement>) => (
     <a 
       className="text-blue-400 underline hover:text-blue-300" 
       {...props} 

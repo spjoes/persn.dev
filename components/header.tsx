@@ -1,25 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const isHomePage = pathname === "/";
 
-  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
-    e.preventDefault();
-    
+  const scrollToSection = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string
+  ) => {
     if (isHomePage) {
-      // If we're on the home page, scroll to the section
+      e.preventDefault();
       const element = document.getElementById(sectionId);
       if (element) {
         element.scrollIntoView({ behavior: "smooth" });
       }
-    } else {
-      // If we're not on the home page, navigate to home page with hash
-      window.location.href = `/#${sectionId}`;
     }
+    // On other pages, we allow the default Link behavior to navigate to the hash
   };
 
   return (
@@ -32,22 +32,22 @@ export function Header() {
           <nav className="hidden md:flex">
             <ul className="flex space-x-6">
               <li>
-                <a
+                <Link
                   href="/#about"
                   onClick={(e) => scrollToSection(e, "about")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#projects"
                   onClick={(e) => scrollToSection(e, "projects")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
                   Projects
-                </a>
+                </Link>
               </li>
               <li>
                 <Link
@@ -58,13 +58,13 @@ export function Header() {
                 </Link>
               </li>
               <li>
-                <a
+                <Link
                   href="/#contact"
                   onClick={(e) => scrollToSection(e, "contact")}
                   className="text-sm font-medium transition hover:text-zinc-400"
                 >
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </nav>
