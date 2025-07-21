@@ -33,7 +33,6 @@ export function FlipCard({ frontImage, backImage, alt }: FlipCardProps) {
               sizes="300px"
               className="object-cover"
               priority
-              fetchPriority="high"
             />
           )}
         </div>
@@ -47,7 +46,6 @@ export function FlipCard({ frontImage, backImage, alt }: FlipCardProps) {
               sizes="300px"
               className="object-cover"
               priority
-              fetchPriority="high"
             />
           )}
         </div>
