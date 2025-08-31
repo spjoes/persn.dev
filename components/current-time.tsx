@@ -16,14 +16,14 @@ export function CurrentTime() {
         minute: 'numeric',
         second: 'numeric',
         hour12: true,
-        timeZone: 'America/New_York'
+        timeZone: 'America/Los_Angeles'
       };
       
       setCurrentTime(new Intl.DateTimeFormat('en-US', options).format(now));
       setIsoTime(now.toISOString());
       
-      const isEDT = now.toLocaleTimeString('en-US', { timeZoneName: 'short', timeZone: 'America/New_York' }).includes('EDT');
-      setTimeZone(isEDT ? 'EDT' : 'EST');
+      const isEDT = now.toLocaleTimeString('en-US', { timeZoneName: 'short', timeZone: 'America/Los_Angeles' }).includes('PDT');
+      setTimeZone(isEDT ? 'PDT' : 'PST');
     };
     
     updateTime();
@@ -43,7 +43,7 @@ export function CurrentTime() {
         role="tooltip"
         className="absolute -top-9 left-1/2 z-10 -translate-x-1/2 transform whitespace-nowrap rounded-md bg-zinc-700 px-2 py-1 text-xs text-white opacity-0 shadow-md transition-opacity group-hover:opacity-100"
       >
-        Ohio ({timeZone})
+        California ({timeZone})
       </div>
     </div>
   );

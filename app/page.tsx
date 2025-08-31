@@ -167,7 +167,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="mb-4 text-zinc-300"
             >
-              I&apos;m an incoming freshman at San Jose State University, where I will be
+              I&apos;m a freshman at San Jose State University, where I am
               expanding my knowledge and skills in software development,
               algorithms, and computer science principles.
             </motion.p>
