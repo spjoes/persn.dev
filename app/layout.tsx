@@ -12,6 +12,11 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Joseph Kerper - Software Engineer",
   description: "Personal website of Joseph Kerper, Software Engineer",
+  openGraph: {
+    title: "Joseph Kerper - Software Engineer",
+    description: "Personal website of Joseph Kerper, Software Engineer",
+    images: ["/images/picture.jpg"],
+  }
 };
 
 export default function RootLayout({
