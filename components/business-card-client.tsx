@@ -13,7 +13,7 @@ export default function BusinessCardClient({ contactPhone }: BusinessCardClientP
     <div className="mx-auto max-w-4xl px-4 py-12">
 
       <motion.div
-        initial={false}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="mx-auto max-w-2xl"
@@ -74,7 +74,7 @@ export default function BusinessCardClient({ contactPhone }: BusinessCardClientP
 
                 {contactPhone && (
                   <a
-                    href={`tel:+1${contactPhone.replace(/\D/g, '')}`}
+                    href={`sms:+1${contactPhone.replace(/\D/g, '')}`}
                     target="_blank"
                     className="group flex items-center gap-3 rounded-lg border border-zinc-700 bg-zinc-800/50 p-3 transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-700 will-change-transform"
                   >
