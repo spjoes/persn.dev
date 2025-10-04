@@ -10,6 +10,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://persn.dev'),
   title: "Joseph Kerper - Software Engineer",
   description: "Personal website of Joseph Kerper, Software Engineer",
   openGraph: {
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="dark">
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} min-h-screen font-sans antialiased bg-zinc-950`}
       >
         <ThemeProvider>

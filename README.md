@@ -2,7 +2,7 @@
 
 A modern, animated personal portfolio website built with Next.js, showcasing projects, skills, and providing real-time integrations.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: [Next.js 15](https://nextjs.org/) with App Router
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
@@ -12,7 +12,7 @@ A modern, animated personal portfolio website built with Next.js, showcasing pro
 - **Fonts**: [Geist](https://vercel.com/font) font family
 - **Real-time Data**: WebSocket integration with [Lanyard API](https://github.com/Phineas/lanyard)
 
-## 🚀 Run Locally
+## Run Locally
 
 ### Prerequisites
 
@@ -61,14 +61,14 @@ npm run dev
 
 The `--turbopack` flag is already included in the dev script for optimal performance.
 
-## 📝 Available Scripts
+## Available Scripts
 
 - `npm run dev` - Start development server with Turbopack
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-## 🤝 Contributing
+## Contributing
 
 This is a personal portfolio website, but if you find bugs or have suggestions, feel free to open an issue or submit a pull request.
 
