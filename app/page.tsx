@@ -25,7 +25,8 @@ export default function Home() {
       description: "A music live streaming platform that allows bands and independent musical artists to stream their concerts, jam sessions, and more to their audience.",
       image: "/images/projects/longday.jpg",
       tags: ["Next.js", "TypeScript", "Tailwind", "MongoDB", "LiveKit"],
-      twitter: "https://x.com/longdaytv",
+      twitter: "https://x.com/LongdayTV",
+      liveUrl: "https://longday.tv",
       status: "unreleased",
     },
     {
