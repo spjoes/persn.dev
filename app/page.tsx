@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { FlipCard } from "@/components/flip-card";
 import { SocialLinks } from "@/components/social-links";
 import { ProjectCard } from "@/components/project-card";
-import { SpotifyNowPlaying } from "@/components/spotify-now-playing";
+import { LastFmNowPlaying } from "@/components/lastfm-now-playing";
 import { CurrentTime } from "@/components/current-time";
 
 interface Project {
@@ -98,9 +98,9 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 w-full max-w-md"
+          className="mt-12 w-full"
         >
-          <SpotifyNowPlaying />
+          <LastFmNowPlaying />
         </motion.div>
       </section>
 
