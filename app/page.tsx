@@ -23,24 +23,6 @@ interface Project {
 export default function Home() {
   const projects: Project[] = [
     {
-      title: "Longday",
-      description: "A music live streaming platform that allows bands and independent musical artists to stream their concerts, jam sessions, and more to their audience.",
-      image: "/images/projects/longday.jpg",
-      tags: ["Next.js", "TypeScript", "Tailwind", "MongoDB", "LiveKit"],
-      twitter: "https://x.com/LongdayTV",
-      liveUrl: "https://longday.tv",
-      status: "unreleased",
-    },
-    {
-      title: "Pokedex0",
-      description: "After seeing current Pokemon collection tracking websites, I decided to make my own that allows for more customization, features, and a better user experience.",
-      image: "/images/projects/pokedex0.jpg",
-      tags: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
-      github: "https://github.com/Pokedex0",
-      twitter: "https://x.com/PokedexZero",
-      status: "unreleased",
-    },
-    {
       title: "ReListen Radio",
       description: "A 24/7 radio station streaming old concerts through Archive.org and ReListen.net directly from their browser or Sonos.",
       image: "/images/projects/relistenradio.jpg",
@@ -75,6 +57,24 @@ export default function Home() {
       devpost: "https://devpost.com/software/detour-xdv26b",
       winner: true,
       status: "released",
+    },
+        {
+      title: "Longday",
+      description: "A music live streaming platform that allows bands and independent musical artists to stream their concerts, jam sessions, and more to their audience.",
+      image: "/images/projects/longday.jpg",
+      tags: ["Next.js", "TypeScript", "Tailwind", "MongoDB", "LiveKit"],
+      twitter: "https://x.com/LongdayTV",
+      liveUrl: "https://longday.tv",
+      status: "unreleased",
+    },
+    {
+      title: "Pokedex0",
+      description: "After seeing current Pokemon collection tracking websites, I decided to make my own that allows for more customization, features, and a better user experience.",
+      image: "/images/projects/pokedex0.jpg",
+      tags: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
+      github: "https://github.com/Pokedex0",
+      twitter: "https://x.com/PokedexZero",
+      status: "unreleased",
     }
   ];
 
