@@ -12,6 +12,8 @@ interface ProjectCardProps {
   github?: string;
   liveUrl?: string;
   twitter?: string;
+  devpost?: string;
+  winner?: boolean;
   status?: "released" | "unreleased" | "concept";
 }
 
@@ -23,6 +25,8 @@ export function ProjectCard({
   github,
   liveUrl,
   twitter,
+  devpost,
+  winner,
   status = "released",
 }: ProjectCardProps) {
   return (
@@ -31,9 +35,9 @@ export function ProjectCard({
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       viewport={{ once: true }}
-      className="opacity-0 group flex h-full flex-col overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 transition-colors duration-300 hover:shadow-md hover:border-zinc-700"
+      className="opacity-0 group flex h-full flex-col rounded-xl border border-zinc-800 bg-zinc-900 transition-colors duration-300 hover:shadow-md hover:border-zinc-700"
     >
-      <div className="relative h-48 w-full overflow-hidden [backface-visibility:hidden]">
+      <div className="relative h-48 w-full overflow-hidden rounded-t-xl [backface-visibility:hidden]">
         <Image
           src={image}
           alt={title}
@@ -44,7 +48,7 @@ export function ProjectCard({
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex-1">
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex items-center gap-2 relative z-50">
             <h3 className="text-xl font-bold">{title}</h3>
             {status === "unreleased" && (
               <span className="relative top-px rounded-full border border-dashed border-amber-500/50 bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-500">
@@ -55,6 +59,32 @@ export function ProjectCard({
               <span className="relative top-px rounded-full border border-dashed border-sky-500/50 bg-sky-900/30 px-2 py-0.5 text-xs font-medium text-sky-500">
                 Concept
               </span>
+            )}
+            {devpost && (
+              <span className="relative top-px rounded-full border border-dashed border-purple-500/50 bg-purple-900/30 px-2 py-0.5 text-xs font-medium text-purple-500">
+                Hackathon
+              </span>
+            )}
+            {winner && (
+              <div className="relative inline-block group/winner">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 20 20"
+                  className="text-yellow-500"
+                >
+                  <path fill="currentColor" d="M15 9a3 3 0 0 0 3-3h2a5 5 0 0 1-5.1 5a5 5 0 0 1-3.9 3.9V17l5 2v1H4v-1l5-2v-2.1A5 5 0 0 1 5.1 11H5a5 5 0 0 1-5-5h2a3 3 0 0 0 3 3V4H2v2H0V2h5V0h10v2h5v4h-2V4h-3v5z"/>
+                </svg>
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 -translate-y-full opacity-0 group-hover/winner:opacity-100 transition-opacity duration-200 pointer-events-none z-[102]">
+                  <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                    <p className="text-xs text-zinc-300">
+                      This project won a hackathon
+                    </p>
+                  </div>
+                  <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-zinc-900 border-r border-b border-zinc-700 rotate-45" />
+                </div>
+              </div>
             )}
           </div>
           <p className="text-sm text-zinc-400">{description}</p>
@@ -105,9 +135,20 @@ export function ProjectCard({
                 <span>Twitter</span>
               </Link>
             )}
+            {devpost && (
+              <Link
+                href={devpost}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1 rounded-md border border-zinc-700 bg-zinc-800/50 px-3 py-1.5 text-sm font-medium text-zinc-300 transition-all duration-200 hover:scale-105 hover:border-zinc-600 hover:bg-zinc-700 hover:text-white will-change-transform [backface-visibility:hidden]"
+              >
+                <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transition-colors group-hover:text-white" fill="currentColor"><title>Devpost</title><path d="M6.002 1.61L0 12.004 6.002 22.39h11.996L24 12.004 17.998 1.61zm1.593 4.084h3.947c3.605 0 6.276 1.695 6.276 6.31 0 4.436-3.21 6.302-6.456 6.302H7.595zm2.517 2.449v7.714h1.241c2.646 0 3.862-1.55 3.862-3.861.009-2.569-1.096-3.853-3.767-3.853Z"/></svg>
+                <span>Devpost</span>
+              </Link>
+            )}
           </div>
         </div>
       </div>
     </motion.div>
   );
-} 
+}
