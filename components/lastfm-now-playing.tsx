@@ -40,6 +40,7 @@ export function LastFmNowPlaying() {
   const [recentTracks, setRecentTracks] = useState<TrackData[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchRecentTracks = async () => {
     try {
@@ -90,9 +91,11 @@ export function LastFmNowPlaying() {
       }
 
       setError(null);
+      setIsInitialLoad(false);
     } catch (err) {
       console.error("Error fetching Last.fm data:", err);
       setError("Failed to load music data");
+      setIsInitialLoad(false);
     }
   };
 
@@ -114,6 +117,110 @@ export function LastFmNowPlaying() {
   }
 
   const allTracks = currentTrack ? [currentTrack, ...recentTracks] : recentTracks;
+
+  if (isInitialLoad) {
+    return (
+      <div className="w-full">
+        <div className="relative">
+          <div className="flex items-end justify-center gap-0 px-4">
+            {[...Array(5)].map((_, index) => (
+              <div
+                key={index}
+                className="relative"
+                style={{
+                  marginLeft: index === 0 ? '0' : '-80px',
+                  zIndex: 5 - index,
+                }}
+              >
+                <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+                  <div 
+                    className="absolute inset-0 rounded-lg bg-black opacity-40 blur-xl"
+                    style={{
+                      transform: `translateY(${8 + index * 2}px)`,
+                      zIndex: -1,
+                    }}
+                  />
+                  
+                  <div 
+                    className="relative w-full h-full rounded-lg overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-800"
+                    style={{
+                      boxShadow: `0 ${20 - index * 2}px ${40 - index * 4}px -12px rgba(0, 0, 0, 0.6), 0 8px 16px -8px rgba(0, 0, 0, 0.8)`,
+                      animation: `bounce-up 0.6s ease-in-out ${index * 0.15}s infinite`
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-zinc-700/30 to-transparent animate-shimmer" 
+                      style={{
+                        backgroundSize: '200% 100%',
+                        animation: 'shimmer 2s infinite'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-center mt-3">
+            <div className="relative group/badge inline-block">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50 backdrop-blur-sm cursor-help">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="14" 
+                  height="14" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  className="text-zinc-400"
+                >
+                  <path d="M9 18V5l12-2v13"/>
+                  <circle cx="6" cy="18" r="3"/>
+                  <circle cx="18" cy="16" r="3"/>
+                </svg>
+                <span className="text-xs font-medium text-zinc-400">
+                  Recently Played
+                </span>
+              </div>
+              
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-200 pointer-events-none z-[102]">
+                <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
+                  <p className="text-xs text-zinc-300">
+                    Synced from Spotify via{' '}
+                    <span className="text-red-400 font-semibold">Last.fm</span>
+                  </p>
+                </div>
+                <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-zinc-900 border-l border-t border-zinc-700 rotate-45" />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <style jsx>{`
+          @keyframes shimmer {
+            0% {
+              background-position: -200% 0;
+            }
+            100% {
+              background-position: 200% 0;
+            }
+          }
+          .animate-shimmer {
+            animation: shimmer 2s infinite;
+          }
+          @keyframes bounce-up {
+            0%, 100% {
+              transform: translateY(0);
+            }
+            50% {
+              transform: translateY(-12px);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
