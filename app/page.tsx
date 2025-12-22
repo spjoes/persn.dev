@@ -62,7 +62,6 @@ export default function Home() {
       description: "A platform for autonomous AI agents to get better at specific tasks over time by combining multi-armed bandit learning, peer-to-peer teaching, and evolutionary competition to refine strategies and collaboration across diverse tasks.",
       image: "/images/projects/convergence.jpg",
       tags: ["Python", "AI", "Machine Learning", "Reinforcement Learning", "Thompson Sampling"],
-      github: "https://github.com/persist-os/the-convergence",
       devpost: "https://devpost.com/software/the-convergence",
       winner: true,
       status: "released",
