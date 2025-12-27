@@ -110,6 +110,7 @@ export function LastFmNowPlaying() {
   }, []);
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     const trackElement = element?.closest('[data-track-url]');
@@ -244,7 +245,7 @@ export function LastFmNowPlaying() {
     <div className="w-full">
       {allTracks.length > 0 && (
         <div className="relative">
-          <div className="flex items-end justify-center gap-0 px-4">
+          <div className="flex items-end justify-center gap-0 px-4" style={{ touchAction: 'none' }}>
             <AnimatePresence mode="popLayout">
               {allTracks.map((track, index) => {
                 const isNowPlaying = index === 0 && currentTrack !== null;
