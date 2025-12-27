@@ -41,6 +41,7 @@ export function LastFmNowPlaying() {
   const [error, setError] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [touchedTrack, setTouchedTrack] = useState<string | null>(null);
 
   const fetchRecentTracks = async () => {
     try {
@@ -107,6 +108,23 @@ export function LastFmNowPlaying() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleTouchMove = (e: React.TouchEvent, trackUrl: string) => {
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    const trackElement = element?.closest('[data-track-url]');
+    
+    if (trackElement) {
+      const url = trackElement.getAttribute('data-track-url');
+      if (url && url !== touchedTrack) {
+        setTouchedTrack(url);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchedTrack(null);
+  };
 
   if (error) {
     return (
@@ -230,31 +248,38 @@ export function LastFmNowPlaying() {
             <AnimatePresence mode="popLayout">
               {allTracks.map((track, index) => {
                 const isNowPlaying = index === 0 && currentTrack !== null;
+                const isTouched = touchedTrack === track.url;
                 return (
                   <motion.a
                     key={track.url}
                     href={track.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    data-track-url={track.url}
                     layout
                     initial={{ opacity: 0, scale: 0.8, y: 20 }}
                     animate={{ 
                       opacity: 1, 
-                      scale: 1, 
-                      y: 0,
+                      scale: isTouched ? 1.05 : 1, 
+                      y: isTouched ? -20 : 0,
                       zIndex: allTracks.length - index,
                     }}
                     exit={{ opacity: 0, scale: 0.8, y: 20 }}
                     transition={{ 
                       duration: 0.4,
                       ease: "easeOut",
-                      layout: { duration: 0.4, ease: "easeInOut" }
+                      layout: { duration: 0.4, ease: "easeInOut" },
+                      scale: { duration: 0.2 },
+                      y: { duration: 0.2 }
                     }}
                     whileHover={{ 
                       y: -20,
                       scale: 1.05,
                       transition: { duration: 0.2 }
                     }}
+                    onTouchStart={() => setTouchedTrack(track.url)}
+                    onTouchMove={(e) => handleTouchMove(e, track.url)}
+                    onTouchEnd={handleTouchEnd}
                     className="relative group"
                     style={{
                       marginLeft: index === 0 ? '0' : '-80px',
