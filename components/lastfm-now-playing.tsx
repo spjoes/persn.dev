@@ -109,7 +109,7 @@ export function LastFmNowPlaying() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleTouchMove = (e: React.TouchEvent, trackUrl: string) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     const trackElement = element?.closest('[data-track-url]');
@@ -278,7 +278,7 @@ export function LastFmNowPlaying() {
                       transition: { duration: 0.2 }
                     }}
                     onTouchStart={() => setTouchedTrack(track.url)}
-                    onTouchMove={(e) => handleTouchMove(e, track.url)}
+                    onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                     className="relative group"
                     style={{
