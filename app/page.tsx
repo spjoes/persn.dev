@@ -72,9 +72,9 @@ export default function Home() {
       description: "After seeing current Pokemon collection tracking websites, I decided to make my own that allows for more customization, features, and a better user experience.",
       image: "/images/projects/pokedex0.jpg",
       tags: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
-      github: "https://github.com/Pokedex0",
       twitter: "https://x.com/PokedexZero",
-      status: "unreleased",
+      liveUrl: "https://pokedex0.com",
+      status: "released",
     }
   ];
 
