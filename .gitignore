@@ -27,6 +27,11 @@
 .DS_Store
 *.pem
 
+# dev-only Apple Music token helpers — never deploy these
+/app/apple-music-auth/
+/app/api/apple-music/dev-token/
+/scripts/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

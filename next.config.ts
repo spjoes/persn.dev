@@ -7,12 +7,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "i.scdn.co",
+        hostname: "is1-ssl.mzstatic.com",
       },
-      {
-        protocol: "https",
-        hostname: "lastfm.freetls.fastly.net",
-      }
     ],
   },
 };
