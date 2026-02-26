@@ -40,6 +40,15 @@ export default function Home() {
       status: "released",
     },
     {
+      title: "Pokedex0",
+      description: "After seeing current Pokemon collection tracking websites, I decided to make my own that allows for more customization, features, and a better user experience.",
+      image: "/images/projects/pokedex0.jpg",
+      tags: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
+      twitter: "https://x.com/PokedexZero",
+      liveUrl: "https://pokedex0.com",
+      status: "released",
+    },
+    {
       title: "The Convergence",
       description: "A platform for autonomous AI agents to get better at specific tasks over time by combining multi-armed bandit learning, peer-to-peer teaching, and evolutionary competition to refine strategies and collaboration across diverse tasks.",
       image: "/images/projects/convergence.jpg",
@@ -58,7 +67,7 @@ export default function Home() {
       winner: true,
       status: "released",
     },
-        {
+    {
       title: "Longday",
       description: "A music live streaming platform that allows bands and independent musical artists to stream their concerts, jam sessions, and more to their audience.",
       image: "/images/projects/longday.jpg",
@@ -66,15 +75,6 @@ export default function Home() {
       twitter: "https://x.com/LongdayTV",
       liveUrl: "https://longday.tv",
       status: "unreleased",
-    },
-    {
-      title: "Pokedex0",
-      description: "After seeing current Pokemon collection tracking websites, I decided to make my own that allows for more customization, features, and a better user experience.",
-      image: "/images/projects/pokedex0.jpg",
-      tags: ["Next.js", "TypeScript", "Tailwind", "Supabase"],
-      twitter: "https://x.com/PokedexZero",
-      liveUrl: "https://pokedex0.com",
-      status: "released",
     }
   ];
 
