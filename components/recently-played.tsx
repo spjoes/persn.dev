@@ -344,7 +344,7 @@ function getDominantClusterColor(
   const totalWeight = samples.reduce((sum, sample) => sum + sample.weight, 0);
   const rankedClusters = finalBuckets
     .filter((bucket) => bucket.length > 0)
-    .map((bucket, index) => {
+    .map((bucket) => {
       const averageColor = getAverageSampleColor(bucket);
       const averageLab = rgbToLab(
         averageColor.r,
