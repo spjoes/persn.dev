@@ -17,6 +17,29 @@ interface AppleMusicSong {
   };
 }
 
+const RECENT_TRACKS_URL = 'https://api.music.apple.com/v1/me/recent/played/tracks?limit=5';
+const DEV_TOKEN_CHECK_URL = 'https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=1';
+
+async function getAppleErrorMessage(response: Response) {
+  let errorDetail = '';
+
+  try {
+    const body = await response.json();
+    const detail =
+      body?.errors?.[0]?.detail ??
+      body?.errors?.[0]?.title ??
+      body?.error;
+
+    if (typeof detail === 'string') {
+      errorDetail = detail;
+    }
+  } catch {
+    // Ignore JSON parse errors and fall back to status text.
+  }
+
+  return errorDetail || response.statusText || 'Unknown Apple Music API error';
+}
+
 export async function GET() {
   const userToken = process.env.APPLE_MUSIC_USER_TOKEN;
 
@@ -30,19 +53,47 @@ export async function GET() {
   try {
     const developerToken = await getDeveloperToken();
 
-    const response = await fetch(
-      'https://api.music.apple.com/v1/me/recent/played/tracks?limit=5',
-      {
-        headers: {
-          Authorization: `Bearer ${developerToken}`,
-          'Music-User-Token': userToken,
-        },
-        cache: 'no-store',
-      }
-    );
+    const response = await fetch(RECENT_TRACKS_URL, {
+      headers: {
+        Authorization: `Bearer ${developerToken}`,
+        'Music-User-Token': userToken,
+      },
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
-      throw new Error(`Apple Music API error: ${response.status}`);
+      const appleError = await getAppleErrorMessage(response);
+
+      if (response.status === 401 || response.status === 403) {
+        const devTokenCheck = await fetch(DEV_TOKEN_CHECK_URL, {
+          headers: {
+            Authorization: `Bearer ${developerToken}`,
+          },
+          cache: 'no-store',
+        });
+
+        if (devTokenCheck.ok) {
+          return NextResponse.json(
+            {
+              error:
+                'Apple Music sync needs to be reauthorized. The stored APPLE_MUSIC_USER_TOKEN is no longer valid.',
+            },
+            { status: 502 }
+          );
+        }
+      }
+
+      console.error('Apple Music API request failed', {
+        status: response.status,
+        detail: appleError,
+      });
+
+      return NextResponse.json(
+        {
+          error: `Apple Music API request failed: ${appleError}`,
+        },
+        { status: 502 }
+      );
     }
 
     const data = await response.json();
@@ -61,7 +112,8 @@ export async function GET() {
     }));
 
     return NextResponse.json(tracks);
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch Apple Music data', error);
     return NextResponse.json(
       { error: 'Failed to fetch music data' },
       { status: 500 }

@@ -585,15 +585,14 @@ export function RecentlyPlayed() {
   const fetchRecentTracks = async () => {
     try {
       const response = await fetch('/api/apple-music');
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch Apple Music data");
-      }
-
       const data = await response.json();
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (!response.ok) {
+        const message =
+          typeof data?.error === 'string'
+            ? data.error
+            : "Failed to fetch Apple Music data";
+        throw new Error(message);
       }
 
       setTracks(data as AppleMusicTrack[]);
@@ -601,7 +600,11 @@ export function RecentlyPlayed() {
       setIsInitialLoad(false);
     } catch (err) {
       console.error("Error fetching Apple Music data:", err);
-      setError("Failed to load music data");
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Failed to load music data";
+      setError(message);
       setIsInitialLoad(false);
     }
   };
