@@ -41,7 +41,7 @@ export default function BusinessCardClient({ contactPhone }: BusinessCardClientP
                   Software Engineering
                 </p>
                 <p className="text-medium text-zinc-400">
-                  San Jose State University
+                  Ohio State University
                 </p>
               </div>
             </div>
