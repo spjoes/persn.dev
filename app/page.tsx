@@ -12,7 +12,7 @@ const container = "mx-auto w-full max-w-7xl px-6 sm:px-10";
 
 const aboutFacts: [string, string][] = [
   ["Based in", "Columbus, Ohio"],
-  ["Studying", "CSE at Ohio State"]
+  ["Studying", "CSE at The Ohio State University"]
 ];
 
 function SectionLabel({ index, children }: { index: string; children: string }) {

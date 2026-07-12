@@ -64,7 +64,7 @@ export function BusinessCard({ contactPhone }: { contactPhone: string | null }) 
               </h1>
               <p className="text-sm text-[var(--ink-dim)]">{site.role}</p>
               <p className="font-mono text-xs text-[var(--ink-faint)]">
-                Ohio State University
+                The Ohio State University
               </p>
             </div>
           </div>
