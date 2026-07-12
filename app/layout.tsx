@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://persn.dev'),
   title: "Joseph Kerper - Software Engineer",
   description: "Personal website of Joseph Kerper, Software Engineer",
+  alternates: {
+    types: {
+      'application/rss+xml': '/rss.xml',
+      'application/atom+xml': '/atom.xml',
+    },
+  },
   openGraph: {
     title: "Joseph Kerper - Software Engineer",
     description: "Personal website of Joseph Kerper, Software Engineer",
