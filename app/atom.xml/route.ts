@@ -1,9 +1,11 @@
 import {
+  absoluteImageUrl,
   escapeXml,
   feedDescription,
   feedTitle,
   formatAtomDate,
   getFeedPosts,
+  imageMimeType,
   siteUrl,
 } from "@/lib/feed";
 
@@ -16,13 +18,18 @@ export async function GET() {
   const entries = posts
     .map((post) => {
       const postUrl = `${siteUrl}/blog/${post.slug}`;
+      const cover = absoluteImageUrl(post.cover);
+      const enclosure = cover
+        ? `
+    <link rel="enclosure" type="${imageMimeType(cover)}" href="${escapeXml(cover)}" />`
+        : "";
       return `
   <entry>
     <title>${escapeXml(post.title)}</title>
     <link href="${postUrl}" />
     <id>${postUrl}</id>
     <updated>${formatAtomDate(post.date)}</updated>
-    <summary>${escapeXml(post.description)}</summary>
+    <summary>${escapeXml(post.description)}</summary>${enclosure}
   </entry>`;
     })
     .join("");

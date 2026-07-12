@@ -8,6 +8,10 @@ export interface PostMeta {
   description: string;
   date: string;
   tags: string[];
+  /** Optional cover image, e.g. "/images/blog/my-post.jpg". */
+  cover?: string;
+  /** Optional alt text for the cover; falls back to the title. */
+  coverAlt?: string;
 }
 
 export interface Post extends PostMeta {
@@ -17,12 +21,15 @@ export interface Post extends PostMeta {
 const postsDirectory = path.join(process.cwd(), "app/blog/posts");
 
 function toMeta(filename: string, data: Record<string, unknown>): PostMeta {
+  const cover = (data.cover as string) || (data.image as string) || undefined;
   return {
     slug: filename.replace(/\.mdx?$/, ""),
     title: (data.title as string) || "Untitled",
     description: (data.description as string) || "",
     date: (data.date as string) || "",
     tags: (data.tags as string[]) || [],
+    cover: cover ? cover.trim() : undefined,
+    coverAlt: (data.coverAlt as string) || undefined,
   };
 }
 

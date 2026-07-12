@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { readdir } from "fs/promises";
 import path from "path";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
@@ -29,6 +30,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return { title: "Post not found" };
+
+  // Use the post's cover for social/RSS previews when it has one. When it
+  // doesn't, clear images so nothing (like the site-wide hero portrait) is
+  // inherited and shown as a fake cover.
+  const images = post.cover
+    ? [{ url: post.cover, alt: post.coverAlt || post.title }]
+    : [];
+
   return {
     title: post.title,
     description: post.description,
@@ -36,6 +45,13 @@ export async function generateMetadata({
       type: "article",
       title: post.title,
       description: post.description,
+      images,
+    },
+    twitter: {
+      card: post.cover ? "summary_large_image" : "summary",
+      title: post.title,
+      description: post.description,
+      images,
     },
   };
 }
@@ -96,7 +112,24 @@ export default async function BlogPost({ params }: BlogPostProps) {
             )}
           </header>
 
-          <hr className="rule mb-10" />
+          {post.cover ? (
+            <figure className="mb-10">
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[var(--line)]">
+                <Image
+                  src={post.cover}
+                  alt={post.coverAlt || post.title}
+                  fill
+                  priority
+                  quality={90}
+                  sizes="(max-width: 1024px) 100vw, 900px"
+                  className="object-cover"
+                />
+                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5" />
+              </div>
+            </figure>
+          ) : (
+            <hr className="rule mb-10" />
+          )}
 
           <div className="prose max-w-[72ch]">
             <MDXRemote source={post.content} />

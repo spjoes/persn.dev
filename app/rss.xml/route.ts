@@ -1,9 +1,11 @@
 import {
+  absoluteImageUrl,
   escapeXml,
   feedDescription,
   feedTitle,
   formatRssDate,
   getFeedPosts,
+  imageMimeType,
   siteUrl,
 } from "@/lib/feed";
 
@@ -16,19 +18,26 @@ export async function GET() {
   const items = posts
     .map((post) => {
       const postUrl = `${siteUrl}/blog/${post.slug}`;
+      const cover = absoluteImageUrl(post.cover);
+      const media = cover
+        ? `
+      <media:content url="${escapeXml(cover)}" medium="image" type="${imageMimeType(cover)}" />
+      <media:thumbnail url="${escapeXml(cover)}" />
+      <enclosure url="${escapeXml(cover)}" type="${imageMimeType(cover)}" length="0" />`
+        : "";
       return `
     <item>
       <title>${escapeXml(post.title)}</title>
       <link>${postUrl}</link>
       <guid isPermaLink="true">${postUrl}</guid>
       <description>${escapeXml(post.description)}</description>
-      <pubDate>${formatRssDate(post.date)}</pubDate>
+      <pubDate>${formatRssDate(post.date)}</pubDate>${media}
     </item>`;
     })
     .join("");
 
   const feed = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>${escapeXml(feedTitle)}</title>
     <link>${siteUrl}</link>

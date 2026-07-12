@@ -51,6 +51,43 @@ lib/site.ts           Single source of truth for content (bio, projects, socials
 - **Colors / type / spacing tokens:** the `:root` block in `app/globals.css`
   (the accent is a single `--accent` variable)
 
+### Blog post covers
+
+Posts are fine with no cover. To add one, drop an image in
+`public/images/blog/` and reference it in the post's frontmatter:
+
+```yaml
+cover: "/images/blog/my-post.webp"
+coverAlt: "Short description"   # optional; defaults to the title
+```
+
+The cover then shows as a banner on the post, a thumbnail in the list, and
+as the social/RSS preview image. Posts without a cover show none of those.
+
+### Generating cover art
+
+`scripts/generate-cover.mjs` makes soft, layered "petals in soft light" art
+(à la OpenAI's blog cards). It composites several translucent, soft-edged
+shapes at different focus depths (seeded value-noise), dithers to avoid
+banding, then encodes a small WebP with sharp. Outputs a 16:9 WebP (~5–30 KB)
+by default. Each seed is a different composition — use `--count` to roll a few
+and keep the one you like.
+
+```bash
+npm run cover -- --palette periwinkle          # one image
+npm run cover -- --count 6                      # a batch of random palettes/seeds
+npm run cover -- --palette mint --seed 42       # reproducible
+npm run cover -- --palette azure --out public/images/blog/my-post.webp
+npm run cover -- --list                         # list palettes
+npm run cover -- --square                       # square instead of 16:9
+npm run cover -- --format png                   # PNG instead of WebP
+```
+
+Palettes: `periwinkle` (matches the site accent), `azure`, `skygreen`, `mint`,
+`teallime`, `blush`, `lavender`, `amber`. Each run prints the exact
+`cover:` line to paste into a post. Images land in `public/images/blog/` unless
+`--out` is given.
+
 ## Build
 
 ```bash

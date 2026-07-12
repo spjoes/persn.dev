@@ -24,7 +24,9 @@
 # dev-only Apple Music token helpers — never deploy these
 /app/apple-music-auth/
 /app/api/apple-music/dev-token/
-/scripts/
+# ignore scripts by default (token helpers), but keep the cover generator
+/scripts/*
+!/scripts/generate-cover.mjs
 
 # env files
 .env*

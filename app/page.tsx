@@ -29,8 +29,8 @@ export default function Home() {
   return (
     <>
       {/* ---------------- Hero ---------------- */}
-      <section className={`${container} pt-10 pb-16 sm:pt-16`}>
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_300px] lg:gap-16">
+      <section className={`${container} pt-6 pb-12 sm:pt-16 sm:pb-16`}>
+        <div className="grid items-center gap-7 sm:gap-8 lg:grid-cols-[1fr_300px] lg:gap-16">
           <Reveal>
             <p className="eyebrow mb-5">{site.role}</p>
             <h1 className="text-5xl font-semibold leading-[0.95] tracking-[-0.03em] text-white sm:text-6xl lg:text-7xl">
@@ -54,7 +54,7 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="relative mx-auto w-full max-w-60 sm:max-w-70 lg:mx-0 lg:max-w-none">
+            <div className="relative mx-auto w-full max-w-48 sm:max-w-64 lg:mx-0 lg:max-w-none">
               {/* soft accent bloom behind the portrait */}
               <div
                 className="pointer-events-none absolute -inset-6 -z-10 rounded-full opacity-60 blur-3xl"
@@ -80,7 +80,7 @@ export default function Home() {
         </div>
 
         {/* Recently played — full-width band, no nested card */}
-        <Reveal delay={160} className="mt-16 sm:mt-20">
+        <Reveal delay={160} className="mt-8 sm:mt-20">
           <RecentlyPlayed />
         </Reveal>
       </section>
