@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useCallback, type CSSProperties } from "react";
 import Image from "next/image";
+import { Icon } from "./icons";
 
 interface AppleMusicTrack {
   name: string;
@@ -35,14 +35,16 @@ interface SamplePixel {
 }
 
 const FALLBACK_PALETTE: AlbumPalette = {
-  borderColor: "rgb(82 82 91)",
-  glowColor: "rgba(113, 113, 122, 0.35)",
-  shadowColor: "rgba(113, 113, 122, 0.45)",
+  borderColor: "rgb(113 113 122)",
+  glowColor: "rgba(139, 157, 255, 0.30)",
+  shadowColor: "rgba(139, 157, 255, 0.40)",
 };
 
 const KMEANS_CLUSTER_COUNT = 5;
 const KMEANS_MAX_ITERATIONS = 6;
 const SAMPLE_SIZE = 28;
+
+/* ---------- color math (album-art accent extraction) ---------- */
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -58,17 +60,12 @@ function rgbToHsl(r: number, g: number, b: number) {
 
   let hue = 0;
   const lightness = (max + min) / 2;
-  const saturation =
-    delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
+  const saturation = delta === 0 ? 0 : delta / (1 - Math.abs(2 * lightness - 1));
 
   if (delta !== 0) {
-    if (max === red) {
-      hue = ((green - blue) / delta) % 6;
-    } else if (max === green) {
-      hue = (blue - red) / delta + 2;
-    } else {
-      hue = (red - green) / delta + 4;
-    }
+    if (max === red) hue = ((green - blue) / delta) % 6;
+    else if (max === green) hue = (blue - red) / delta + 2;
+    else hue = (red - green) / delta + 4;
   }
 
   return {
@@ -80,12 +77,10 @@ function rgbToHsl(r: number, g: number, b: number) {
 
 function hslToRgb(h: number, s: number, l: number) {
   const hue = h / 360;
-
   if (s === 0) {
     const value = Math.round(l * 255);
     return { r: value, g: value, b: value };
   }
-
   const hueToRgb = (p: number, q: number, t: number) => {
     let temp = t;
     if (temp < 0) temp += 1;
@@ -95,10 +90,8 @@ function hslToRgb(h: number, s: number, l: number) {
     if (temp < 2 / 3) return p + (q - p) * (2 / 3 - temp) * 6;
     return p;
   };
-
   const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
   const p = 2 * l - q;
-
   return {
     r: Math.round(hueToRgb(p, q, hue + 1 / 3) * 255),
     g: Math.round(hueToRgb(p, q, hue) * 255),
@@ -117,33 +110,22 @@ function rgbToLab(r: number, g: number, b: number): LabColor {
   const red = srgbChannelToLinear(r);
   const green = srgbChannelToLinear(g);
   const blue = srgbChannelToLinear(b);
-
   const x = (red * 0.4124 + green * 0.3576 + blue * 0.1805) / 0.95047;
   const y = red * 0.2126 + green * 0.7152 + blue * 0.0722;
   const z = (red * 0.0193 + green * 0.1192 + blue * 0.9505) / 1.08883;
-
-  const transform = (value: number) => {
-    return value > 0.008856 ? Math.cbrt(value) : 7.787 * value + 16 / 116;
-  };
-
+  const transform = (value: number) =>
+    value > 0.008856 ? Math.cbrt(value) : 7.787 * value + 16 / 116;
   const fx = transform(x);
   const fy = transform(y);
   const fz = transform(z);
-
-  return {
-    l: 116 * fy - 16,
-    a: 500 * (fx - fy),
-    b: 200 * (fy - fz),
-  };
+  return { l: 116 * fy - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) };
 }
 
 function getLabDistance(a: LabColor, b: LabColor) {
-  const lightnessDelta = a.l - b.l;
-  const aDelta = a.a - b.a;
-  const bDelta = a.b - b.b;
-  return Math.sqrt(
-    lightnessDelta * lightnessDelta + aDelta * aDelta + bDelta * bDelta
-  );
+  const dl = a.l - b.l;
+  const da = a.a - b.a;
+  const db = a.b - b.b;
+  return Math.sqrt(dl * dl + da * da + db * db);
 }
 
 function getNeutralDistance(lab: LabColor) {
@@ -151,72 +133,49 @@ function getNeutralDistance(lab: LabColor) {
 }
 
 function getPixelDistanceSquared(a: LabColor, b: LabColor) {
-  const lightnessDelta = a.l - b.l;
-  const aDelta = a.a - b.a;
-  const bDelta = a.b - b.b;
-  return (
-    lightnessDelta * lightnessDelta +
-    aDelta * aDelta +
-    bDelta * bDelta
-  );
+  const dl = a.l - b.l;
+  const da = a.a - b.a;
+  const db = a.b - b.b;
+  return dl * dl + da * da + db * db;
 }
 
 function getAverageSampleColor(samples: SamplePixel[]) {
-  let redTotal = 0;
-  let greenTotal = 0;
-  let blueTotal = 0;
-  let totalWeight = 0;
-
-  for (const sample of samples) {
-    redTotal += sample.r * sample.weight;
-    greenTotal += sample.g * sample.weight;
-    blueTotal += sample.b * sample.weight;
-    totalWeight += sample.weight;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let total = 0;
+  for (const s of samples) {
+    r += s.r * s.weight;
+    g += s.g * s.weight;
+    b += s.b * s.weight;
+    total += s.weight;
   }
-
   return {
-    r: Math.round(redTotal / totalWeight),
-    g: Math.round(greenTotal / totalWeight),
-    b: Math.round(blueTotal / totalWeight),
+    r: Math.round(r / total),
+    g: Math.round(g / total),
+    b: Math.round(b / total),
   };
 }
 
 function getAverageLab(samples: SamplePixel[]) {
-  const averageColor = getAverageSampleColor(samples);
-  return rgbToLab(averageColor.r, averageColor.g, averageColor.b);
+  const c = getAverageSampleColor(samples);
+  return rgbToLab(c.r, c.g, c.b);
 }
 
-function getBackgroundLab(
-  data: Uint8ClampedArray,
-  width: number,
-  height: number
-) {
+function getBackgroundLab(data: Uint8ClampedArray, width: number, height: number) {
   const borderSamples: SamplePixel[] = [];
-
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const isBorderPixel =
-        x < 2 || x >= width - 2 || y < 2 || y >= height - 2;
-
-      if (!isBorderPixel) {
-        continue;
-      }
-
+      const isBorderPixel = x < 2 || x >= width - 2 || y < 2 || y >= height - 2;
+      if (!isBorderPixel) continue;
       const index = (y * width + x) * 4;
       const red = data[index];
       const green = data[index + 1];
       const blue = data[index + 2];
       const alpha = data[index + 3];
-
-      if (alpha < 128) {
-        continue;
-      }
-
+      if (alpha < 128) continue;
       const { s, l } = rgbToHsl(red, green, blue);
-      if (l < 0.03 || l > 0.97 || s < 0.02) {
-        continue;
-      }
-
+      if (l < 0.03 || l > 0.97 || s < 0.02) continue;
       borderSamples.push({
         r: red,
         g: green,
@@ -228,26 +187,21 @@ function getBackgroundLab(
       });
     }
   }
-
-  if (borderSamples.length === 0) {
-    return null;
-  }
-
+  if (borderSamples.length === 0) return null;
   return getAverageLab(borderSamples);
 }
 
 function getInitialCentroids(samples: SamplePixel[], clusterCount: number) {
-  const firstCentroid = samples.reduce((bestSample, sample) => {
+  const firstCentroid = samples.reduce((best, sample) => {
     const bestScore =
-      bestSample.weight * 0.45 +
-      bestSample.saturation * 0.3 +
-      clamp(getNeutralDistance(bestSample.lab) / 90, 0, 1) * 0.25;
+      best.weight * 0.45 +
+      best.saturation * 0.3 +
+      clamp(getNeutralDistance(best.lab) / 90, 0, 1) * 0.25;
     const sampleScore =
       sample.weight * 0.45 +
       sample.saturation * 0.3 +
       clamp(getNeutralDistance(sample.lab) / 90, 0, 1) * 0.25;
-
-    return sampleScore > bestScore ? sample : bestSample;
+    return sampleScore > bestScore ? sample : best;
   }, samples[0]);
 
   const centroids = [firstCentroid.lab];
@@ -255,30 +209,24 @@ function getInitialCentroids(samples: SamplePixel[], clusterCount: number) {
   while (centroids.length < clusterCount) {
     let nextCentroid = samples[0].lab;
     let bestScore = -1;
-
     for (const sample of samples) {
-      const nearestDistance = centroids.reduce((minimumDistance, centroid) => {
-        return Math.min(
-          minimumDistance,
-          getPixelDistanceSquared(sample.lab, centroid)
-        );
-      }, Number.POSITIVE_INFINITY);
+      const nearestDistance = centroids.reduce(
+        (min, c) => Math.min(min, getPixelDistanceSquared(sample.lab, c)),
+        Number.POSITIVE_INFINITY
+      );
       const score =
         nearestDistance *
         (0.3 +
           sample.weight * 0.35 +
           sample.saturation * 0.2 +
           clamp(getNeutralDistance(sample.lab) / 90, 0, 1) * 0.15);
-
       if (score > bestScore) {
         bestScore = score;
         nextCentroid = sample.lab;
       }
     }
-
     centroids.push(nextCentroid);
   }
-
   return centroids;
 }
 
@@ -287,86 +235,57 @@ function getDominantClusterColor(
   backgroundLab: LabColor | null
 ) {
   const clusterCount = Math.min(KMEANS_CLUSTER_COUNT, samples.length);
-
-  if (clusterCount === 0) {
-    return null;
-  }
+  if (clusterCount === 0) return null;
 
   let centroids = getInitialCentroids(samples, clusterCount);
 
   for (let iteration = 0; iteration < KMEANS_MAX_ITERATIONS; iteration += 1) {
-    const buckets: SamplePixel[][] = Array.from(
-      { length: clusterCount },
-      () => []
-    );
-
+    const buckets: SamplePixel[][] = Array.from({ length: clusterCount }, () => []);
     for (const sample of samples) {
-      let nearestClusterIndex = 0;
+      let nearest = 0;
       let nearestDistance = Number.POSITIVE_INFINITY;
-
       for (let i = 0; i < centroids.length; i += 1) {
-        const distance = getPixelDistanceSquared(sample.lab, centroids[i]);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestClusterIndex = i;
+        const d = getPixelDistanceSquared(sample.lab, centroids[i]);
+        if (d < nearestDistance) {
+          nearestDistance = d;
+          nearest = i;
         }
       }
-
-      buckets[nearestClusterIndex].push(sample);
+      buckets[nearest].push(sample);
     }
-
-    centroids = centroids.map((centroid, index) => {
-      const bucket = buckets[index];
-      return bucket.length > 0 ? getAverageLab(bucket) : centroid;
-    });
+    centroids = centroids.map((centroid, index) =>
+      buckets[index].length > 0 ? getAverageLab(buckets[index]) : centroid
+    );
   }
 
-  const finalBuckets: SamplePixel[][] = Array.from(
-    { length: clusterCount },
-    () => []
-  );
-
+  const finalBuckets: SamplePixel[][] = Array.from({ length: clusterCount }, () => []);
   for (const sample of samples) {
-    let nearestClusterIndex = 0;
+    let nearest = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
-
     for (let i = 0; i < centroids.length; i += 1) {
-      const distance = getPixelDistanceSquared(sample.lab, centroids[i]);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestClusterIndex = i;
+      const d = getPixelDistanceSquared(sample.lab, centroids[i]);
+      if (d < nearestDistance) {
+        nearestDistance = d;
+        nearest = i;
       }
     }
-
-    finalBuckets[nearestClusterIndex].push(sample);
+    finalBuckets[nearest].push(sample);
   }
 
-  const totalWeight = samples.reduce((sum, sample) => sum + sample.weight, 0);
-  const rankedClusters = finalBuckets
+  const totalWeight = samples.reduce((sum, s) => sum + s.weight, 0);
+  const ranked = finalBuckets
     .filter((bucket) => bucket.length > 0)
     .map((bucket) => {
       const averageColor = getAverageSampleColor(bucket);
-      const averageLab = rgbToLab(
-        averageColor.r,
-        averageColor.g,
-        averageColor.b
-      );
-      const { s, l } = rgbToHsl(
-        averageColor.r,
-        averageColor.g,
-        averageColor.b
-      );
+      const averageLab = rgbToLab(averageColor.r, averageColor.g, averageColor.b);
+      const { s, l } = rgbToHsl(averageColor.r, averageColor.g, averageColor.b);
       const clusterWeight = bucket.reduce((sum, sample) => sum + sample.weight, 0);
       const averageSaliency =
         bucket.reduce((sum, sample) => sum + sample.saliency * sample.weight, 0) /
         clusterWeight;
       const areaScore = clusterWeight / totalWeight;
       const saturationScore = clamp(s, 0, 1);
-      const neutralDistanceScore = clamp(
-        getNeutralDistance(averageLab) / 80,
-        0,
-        1
-      );
+      const neutralDistanceScore = clamp(getNeutralDistance(averageLab) / 80, 0, 1);
       const saliencyScore = clamp(averageSaliency, 0, 1);
       const backgroundContrastScore = backgroundLab
         ? clamp(getLabDistance(averageLab, backgroundLab) / 55, 0, 1)
@@ -379,19 +298,15 @@ function getDominantClusterColor(
         saliencyScore * 0.2 +
         backgroundContrastScore * 0.09 +
         midtoneScore * 0.05;
-
-      return {
-        color: averageColor,
-        score,
-      };
+      return { color: averageColor, score };
     })
     .sort((a, b) => b.score - a.score);
 
-  return rankedClusters[0]?.color ?? null;
+  return ranked[0]?.color ?? null;
 }
 
-function getPixelLuminance(red: number, green: number, blue: number) {
-  return (red * 0.299 + green * 0.587 + blue * 0.114) / 255;
+function getPixelLuminance(r: number, g: number, b: number) {
+  return (r * 0.299 + g * 0.587 + b * 0.114) / 255;
 }
 
 function buildWeightedSamples(
@@ -412,21 +327,12 @@ function buildWeightedSamples(
       const green = data[index + 1];
       const blue = data[index + 2];
       const alpha = data[index + 3];
-
-      if (alpha < 128) {
-        continue;
-      }
+      if (alpha < 128) continue;
 
       const { s } = rgbToHsl(red, green, blue);
       const luminance = getPixelLuminance(red, green, blue);
-
-      if (luminance < 0.08 || luminance > 0.95) {
-        continue;
-      }
-
-      if (s < 0.08) {
-        continue;
-      }
+      if (luminance < 0.08 || luminance > 0.95) continue;
+      if (s < 0.08) continue;
 
       const lab = rgbToLab(red, green, blue);
       const backgroundDistance = backgroundLab
@@ -436,6 +342,7 @@ function buildWeightedSamples(
         (x - centerX) * (x - centerX) + (y - centerY) * (y - centerY)
       );
       const centerBias = 1 - distanceFromCenter / maxDistance;
+
       const localContrastValues: number[] = [];
       const neighbors = [
         [0, -1],
@@ -443,66 +350,30 @@ function buildWeightedSamples(
         [0, 1],
         [-1, 0],
       ];
-
       for (const [dx, dy] of neighbors) {
-        const neighborX = x + dx;
-        const neighborY = y + dy;
-
-        if (
-          neighborX < 0 ||
-          neighborX >= width ||
-          neighborY < 0 ||
-          neighborY >= height
-        ) {
-          continue;
-        }
-
-        const neighborIndex = (neighborY * width + neighborX) * 4;
-        const neighborLab = rgbToLab(
-          data[neighborIndex],
-          data[neighborIndex + 1],
-          data[neighborIndex + 2]
-        );
-        localContrastValues.push(
-          clamp(getLabDistance(lab, neighborLab) / 40, 0, 1)
-        );
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
+        const ni = (ny * width + nx) * 4;
+        const neighborLab = rgbToLab(data[ni], data[ni + 1], data[ni + 2]);
+        localContrastValues.push(clamp(getLabDistance(lab, neighborLab) / 40, 0, 1));
       }
-
       const localContrast =
         localContrastValues.length > 0
-          ? localContrastValues.reduce((sum, value) => sum + value, 0) /
+          ? localContrastValues.reduce((sum, v) => sum + v, 0) /
             localContrastValues.length
           : 0;
-      const saliency = clamp(
-        backgroundDistance * 0.6 + localContrast * 0.4,
-        0,
-        1
-      );
-      const weight =
-        0.3 +
-        centerBias * 0.3 +
-        saliency * 0.28 +
-        clamp(s, 0, 1) * 0.12;
+      const saliency = clamp(backgroundDistance * 0.6 + localContrast * 0.4, 0, 1);
+      const weight = 0.3 + centerBias * 0.3 + saliency * 0.28 + clamp(s, 0, 1) * 0.12;
 
-      samples.push({
-        r: red,
-        g: green,
-        b: blue,
-        saturation: s,
-        lab,
-        weight,
-        saliency,
-      });
+      samples.push({ r: red, g: green, b: blue, saturation: s, lab, weight, saliency });
     }
   }
-
   return samples;
 }
 
 async function extractAlbumPalette(imageUrl: string): Promise<AlbumPalette | null> {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
   return new Promise((resolve) => {
     const image = new window.Image();
@@ -514,11 +385,7 @@ async function extractAlbumPalette(imageUrl: string): Promise<AlbumPalette | nul
       try {
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d", { willReadFrequently: true });
-
-        if (!context) {
-          resolve(null);
-          return;
-        }
+        if (!context) return resolve(null);
 
         canvas.width = SAMPLE_SIZE;
         canvas.height = SAMPLE_SIZE;
@@ -526,33 +393,13 @@ async function extractAlbumPalette(imageUrl: string): Promise<AlbumPalette | nul
 
         const { data } = context.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
         const backgroundLab = getBackgroundLab(data, SAMPLE_SIZE, SAMPLE_SIZE);
-        const samples = buildWeightedSamples(
-          data,
-          SAMPLE_SIZE,
-          SAMPLE_SIZE,
-          backgroundLab
-        );
+        const samples = buildWeightedSamples(data, SAMPLE_SIZE, SAMPLE_SIZE, backgroundLab);
+        if (samples.length === 0) return resolve(null);
 
-        if (samples.length === 0) {
-          resolve(null);
-          return;
-        }
+        const dominant = getDominantClusterColor(samples, backgroundLab);
+        if (!dominant) return resolve(null);
 
-        const dominantClusterColor = getDominantClusterColor(
-          samples,
-          backgroundLab
-        );
-
-        if (!dominantClusterColor) {
-          resolve(null);
-          return;
-        }
-
-        const accentHsl = rgbToHsl(
-          dominantClusterColor.r,
-          dominantClusterColor.g,
-          dominantClusterColor.b
-        );
+        const accentHsl = rgbToHsl(dominant.r, dominant.g, dominant.b);
         const accentRgb = hslToRgb(
           accentHsl.h,
           clamp(Math.max(accentHsl.s, 0.45), 0.45, 0.88),
@@ -567,357 +414,184 @@ async function extractAlbumPalette(imageUrl: string): Promise<AlbumPalette | nul
         resolve(null);
       }
     };
-
     image.onerror = () => resolve(null);
     image.src = imageUrl;
   });
 }
 
+/* --------------------------- component --------------------------- */
+
 export function RecentlyPlayed() {
   const [tracks, setTracks] = useState<AppleMusicTrack[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [touchedTrack, setTouchedTrack] = useState<string | null>(null);
-  const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
-  const [albumPalettes, setAlbumPalettes] = useState<Record<string, AlbumPalette>>({});
+  const [loading, setLoading] = useState(true);
+  const [palettes, setPalettes] = useState<Record<string, AlbumPalette>>({});
 
-  const fetchRecentTracks = async () => {
+  const fetchRecentTracks = useCallback(async () => {
     try {
-      const response = await fetch('/api/apple-music');
+      const response = await fetch("/api/apple-music");
       const data = await response.json();
-
       if (!response.ok) {
         const message =
-          typeof data?.error === 'string'
+          typeof data?.error === "string"
             ? data.error
-            : "Failed to fetch Apple Music data";
+            : "Couldn't reach Apple Music";
         throw new Error(message);
       }
-
       setTracks(data as AppleMusicTrack[]);
       setError(null);
-      setIsInitialLoad(false);
     } catch (err) {
-      console.error("Error fetching Apple Music data:", err);
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Failed to load music data";
-      setError(message);
-      setIsInitialLoad(false);
+      setError(err instanceof Error ? err.message : "Couldn't load music");
+    } finally {
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchRecentTracks();
-    const interval = setInterval(fetchRecentTracks, 15000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    fetchRecentTracks();
+    const interval = setInterval(fetchRecentTracks, 20000);
+    return () => clearInterval(interval);
+  }, [fetchRecentTracks]);
+
+  // Extract accent palettes for new artwork
+  useEffect(() => {
     let cancelled = false;
-
-    const loadPalettes = async () => {
-      const pendingTracks = tracks.filter(
-        (track) => track.artworkUrl && !albumPalettes[track.trackUrl]
-      );
-
-      if (pendingTracks.length === 0) {
-        return;
-      }
-
-      const palettes = await Promise.all(
-        pendingTracks.map(async (track) => ({
-          trackUrl: track.trackUrl,
-          palette: await extractAlbumPalette(track.artworkUrl),
+    const load = async () => {
+      const pending = tracks.filter((t) => t.artworkUrl && !palettes[t.trackUrl]);
+      if (pending.length === 0) return;
+      const results = await Promise.all(
+        pending.map(async (t) => ({
+          trackUrl: t.trackUrl,
+          palette: await extractAlbumPalette(t.artworkUrl),
         }))
       );
-
-      if (cancelled) {
-        return;
-      }
-
-      setAlbumPalettes((prev) => {
+      if (cancelled) return;
+      setPalettes((prev) => {
         const next = { ...prev };
-        for (const { trackUrl, palette } of palettes) {
+        for (const { trackUrl, palette } of results) {
           next[trackUrl] = palette ?? FALLBACK_PALETTE;
         }
         return next;
       });
     };
-
-    void loadPalettes();
-
+    void load();
     return () => {
       cancelled = true;
     };
-  }, [tracks, albumPalettes]);
+  }, [tracks, palettes]);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    const touch = e.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    const trackElement = element?.closest('[data-track-url]');
-
-    if (trackElement) {
-      const url = trackElement.getAttribute('data-track-url');
-      if (url && url !== touchedTrack) {
-        setTouchedTrack(url);
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setTouchedTrack(null);
-  };
+  const Header = (
+    <div className="mb-8 flex items-center gap-4">
+      <span className="eyebrow">Recently played</span>
+      <span className="h-px flex-1 bg-[var(--line)]" />
+      <span className="inline-flex items-center gap-1.5 text-[var(--ink-faint)]">
+        <Icon.appleMusic className="h-3.5 w-3.5" />
+        <span className="font-mono text-[11px] tracking-wide">Apple Music</span>
+      </span>
+    </div>
+  );
 
   if (error) {
     return (
-      <div className="text-center text-sm text-zinc-500">
-        {error}
+      <div className="w-full">
+        {Header}
+        <div className="flex items-center gap-2 text-sm text-[var(--ink-faint)]">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--ink-faint)]" />
+          {error}
+        </div>
       </div>
     );
   }
 
-  if (isInitialLoad) {
+  if (loading) {
     return (
       <div className="w-full">
-        <div className="relative">
-          <div className="flex items-end justify-center gap-0 px-4">
-            {[...Array(5)].map((_, index) => (
-              <div
-                key={index}
-                className="relative"
-                style={{
-                  marginLeft: index === 0 ? '0' : '-80px',
-                  zIndex: 5 - index,
-                }}
-              >
-                <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-                  <div
-                    className="absolute inset-0 rounded-lg bg-black opacity-40 blur-xl"
-                    style={{
-                      transform: `translateY(${8 + index * 2}px)`,
-                      zIndex: -1,
-                    }}
-                  />
-                  <div
-                    className="relative w-full h-full rounded-lg overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-800"
-                    style={{
-                      boxShadow: `0 ${20 - index * 2}px ${40 - index * 4}px -12px rgba(0, 0, 0, 0.6), 0 8px 16px -8px rgba(0, 0, 0, 0.8)`,
-                      animation: `bounce-up 0.6s ease-in-out ${index * 0.15}s infinite`
-                    }}
-                  >
-                    <div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-zinc-700/30 to-transparent animate-shimmer"
-                      style={{
-                        backgroundSize: '200% 100%',
-                        animation: 'shimmer 2s infinite'
-                      }}
-                    />
-                  </div>
-                </div>
+        {Header}
+        <div className="flex gap-4 overflow-hidden sm:grid sm:grid-cols-5 sm:gap-5">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="shrink-0 basis-[42%] sm:basis-auto">
+              <div className="relative aspect-square overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg-soft)]">
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer 1.8s infinite",
+                  }}
+                />
               </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center mt-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50 backdrop-blur-sm">
-              <AppleMusicIcon />
-              <span className="text-xs font-medium text-zinc-400">
-                Recently Played
-              </span>
+              <div className="mt-3 h-3.5 w-3/4 rounded bg-[var(--bg-soft)]" />
+              <div className="mt-2 h-3 w-1/2 rounded bg-[var(--bg-soft)]" />
             </div>
-          </div>
+          ))}
         </div>
-
-        <style jsx>{`
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          .animate-shimmer { animation: shimmer 2s infinite; }
-          @keyframes bounce-up {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-12px); }
-          }
-        `}</style>
       </div>
     );
   }
+
+  if (tracks.length === 0) return null;
 
   return (
     <div className="w-full">
-      {tracks.length > 0 && (
-        <div className="relative">
-          <div
-            className="flex items-end justify-center gap-0 px-4"
-            style={{ touchAction: 'none' }}
-          >
-            <AnimatePresence mode="popLayout">
-              {tracks.map((track, index) => {
-                const isTouched = touchedTrack === track.trackUrl;
-                const isHovered = hoveredTrack === track.trackUrl;
-                const isActive = isTouched || isHovered;
-                const palette = albumPalettes[track.trackUrl] ?? FALLBACK_PALETTE;
-                return (
-                  <motion.a
-                    key={track.trackUrl}
-                    href={track.trackUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-track-url={track.trackUrl}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                    animate={{
-                      opacity: 1,
-                      scale: isActive ? 1.05 : 1,
-                      y: isActive ? -20 : 0,
-                      zIndex: tracks.length - index,
-                    }}
-                    exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                    transition={{
-                      duration: 0.4,
-                      ease: "easeOut",
-                      layout: { duration: 0.4, ease: "easeInOut" },
-                      scale: { duration: 0.2 },
-                      y: { duration: 0.2 }
-                    }}
-                    onHoverStart={() => setHoveredTrack(track.trackUrl)}
-                    onHoverEnd={() => setHoveredTrack((current) => (
-                      current === track.trackUrl ? null : current
-                    ))}
-                    onTouchStart={() => setTouchedTrack(track.trackUrl)}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    className="relative group"
-                    style={{ marginLeft: index === 0 ? '0' : '-80px' }}
-                  >
-                    <div className="relative w-32 h-32 sm:w-40 sm:h-40">
-                      <div
-                        className="absolute inset-0 rounded-lg bg-black opacity-60 blur-xl"
-                        style={{
-                          transform: `translateY(${8 + index * 2}px)`,
-                          zIndex: -1,
-                        }}
-                      />
-                      <div
-                        className="absolute inset-0 rounded-lg transition-all duration-200 blur-md"
-                        style={{
-                          transform: 'translateY(4px)',
-                          zIndex: -1,
-                          opacity: isActive ? 1 : 0,
-                          background: `radial-gradient(circle at center, ${palette.glowColor} 0%, transparent 72%)`,
-                          boxShadow: isActive ? `0 0 32px 4px ${palette.shadowColor}` : 'none',
-                        }}
-                      />
+      {Header}
 
-                      <div
-                        className="relative w-full h-full rounded-lg overflow-hidden border-2 shadow-2xl transition-all duration-200"
-                        style={{
-                          borderColor: isActive ? palette.borderColor : 'rgb(39 39 42)',
-                          boxShadow: isActive
-                            ? `0 ${20 - index * 2}px ${40 - index * 4}px -12px rgba(0, 0, 0, 0.6), 0 8px 16px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px ${palette.borderColor}, 0 0 24px ${palette.shadowColor}`
-                            : `0 ${20 - index * 2}px ${40 - index * 4}px -12px rgba(0, 0, 0, 0.6), 0 8px 16px -8px rgba(0, 0, 0, 0.8)`
-                        }}
-                      >
-                        {loadingImages.has(track.trackUrl) && (
-                          <div className="absolute inset-0 bg-zinc-800 animate-pulse" />
-                        )}
-
-                        {track.artworkUrl && (
-                          <Image
-                            src={track.artworkUrl}
-                            alt={`${track.name} by ${track.artist}`}
-                            fill
-                            sizes="(max-width: 640px) 128px, 160px"
-                            className={`object-cover transition-opacity duration-300 ${
-                              loadingImages.has(track.trackUrl) ? 'opacity-0' : 'opacity-100'
-                            }`}
-                            onLoad={() => {
-                              setLoadingImages(prev => {
-                                const next = new Set(prev);
-                                next.delete(track.trackUrl);
-                                return next;
-                              });
-                            }}
-                            priority={index < 2}
-                            quality={95}
-                            unoptimized
-                          />
-                        )}
-                      </div>
-
-                      <div className="absolute -top-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[101]">
-                        <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-lg">
-                          <p className="text-sm font-semibold text-zinc-200 max-w-[200px] truncate">
-                            {track.name}
-                          </p>
-                          <p className="text-xs text-zinc-400 max-w-[200px] truncate">
-                            {track.artist}
-                          </p>
-                        </div>
-                        <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-zinc-900 border-r border-b border-zinc-700 rotate-45" />
-                      </div>
-                    </div>
-                  </motion.a>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-
-          <div className="flex justify-center mt-3">
-            <div className="relative group/badge inline-block">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50 backdrop-blur-sm cursor-help">
-                <AppleMusicIcon />
-                <span className="text-xs font-medium text-zinc-400">
-                  Recently Played
-                </span>
-              </div>
-
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 opacity-0 group-hover/badge:opacity-100 transition-opacity duration-200 pointer-events-none z-[102]">
-                <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap">
-                  <p className="text-xs text-zinc-300">
-                    Synced from{' '}
-                    <span className="font-semibold" style={{ color: '#fc3c44' }}>Apple Music</span>
-                  </p>
+      <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
+        {tracks.map((track, index) => {
+          const palette = palettes[track.trackUrl] ?? FALLBACK_PALETTE;
+          const albumVars = {
+            "--album-border": palette.borderColor,
+            "--album-glow": palette.glowColor,
+            "--album-shadow": palette.shadowColor,
+          } as CSSProperties;
+          return (
+            <a
+              key={track.trackUrl}
+              href={track.trackUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={albumVars}
+              className="group relative block shrink-0 basis-[42%] snap-start outline-none sm:basis-auto"
+              aria-label={`${track.name} by ${track.artist}`}
+            >
+              <div className="relative aspect-square">
+                <div
+                  className="pointer-events-none absolute -inset-2 rounded-[28px] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100"
+                  style={{
+                    background:
+                      "radial-gradient(circle at center, var(--album-glow), transparent 70%)",
+                  }}
+                />
+                <div className="relative h-full w-full overflow-hidden rounded-2xl border border-[var(--line)] shadow-[0_2px_14px_-6px_rgba(0,0,0,0.7)] transition-all duration-300 will-change-transform group-hover:-translate-y-1.5 group-hover:[border-color:var(--album-border)] group-hover:shadow-[0_16px_38px_-12px_var(--album-shadow),0_0_0_1px_var(--album-border)] group-focus-visible:[border-color:var(--album-border)]">
+                  {track.artworkUrl ? (
+                    <Image
+                      src={track.artworkUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 45vw, 220px"
+                      className="object-cover"
+                      quality={92}
+                      unoptimized
+                      priority={index < 2}
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-[var(--bg-soft)]" />
+                  )}
                 </div>
-                <div className="absolute left-1/2 -translate-x-1/2 -top-1 w-2 h-2 bg-zinc-900 border-l border-t border-zinc-700 rotate-45" />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
-function AppleMusicIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="am-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fc3c44" />
-          <stop offset="100%" stopColor="#ff2d55" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M9 18V5l12-2v13"
-        stroke="url(#am-gradient)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="6" cy="18" r="3" fill="url(#am-gradient)" />
-      <circle cx="18" cy="16" r="3" fill="url(#am-gradient)" />
-    </svg>
+              <div className="mt-3">
+                <p className="truncate text-sm font-medium text-[var(--ink)] transition-colors group-hover:text-white">
+                  {track.name}
+                </p>
+                <p className="truncate text-[13px] text-[var(--ink-faint)]">
+                  {track.artist}
+                </p>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </div>
   );
 }

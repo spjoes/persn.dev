@@ -1,9 +1,12 @@
-import BusinessCardClient from "@/components/business-card-client";
+import type { Metadata } from "next";
+import { BusinessCard } from "@/components/business-card";
 
-export default async function BusinessCardPage() {
+export const metadata: Metadata = {
+  title: "Card",
+  description: "Joseph Kerper, contact card.",
+};
+
+export default function BusinessCardPage() {
   const contactPhone = process.env.PHONE_NUMBER || null;
-
-  return (
-    <BusinessCardClient contactPhone={contactPhone} />
-  );
+  return <BusinessCard contactPhone={contactPhone} />;
 }

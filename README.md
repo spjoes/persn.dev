@@ -1,77 +1,58 @@
-# Persn.dev - Joey Kerper's Personal Website
+# persn.dev
 
-A modern, animated personal portfolio website built with Next.js, showcasing projects, skills, and providing real-time integrations.
+Personal website & portfolio for Joseph Kerper — a redesign focused on a
+dark, minimal, fast, near-monochrome aesthetic. Album-art colors from the
+Apple Music module provide the only real pops of color.
 
-## Tech Stack
+## Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) with App Router
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Animations**: [Framer Motion](https://www.framer.com/motion/)
-- **UI Components**: [Radix UI](https://www.radix-ui.com/) + [Shadcn](https://ui.shadcn.com/)
-- **Fonts**: [Geist](https://vercel.com/font) font family
-- **Real-time Data**: WebSocket integration with [Lanyard API](https://github.com/Phineas/lanyard)
+- **Next.js 15** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS v4** with a small token layer in `app/globals.css`
+- **MDX** blog via `next-mdx-remote` (+ RSS / Atom feeds)
+- **Apple Music** "Recently Played" — live, with per-album accent extraction
+- Geist / Geist Mono, lightweight IntersectionObserver scroll reveals
 
-## Run Locally
+## Getting started
 
-### Prerequisites
-
-- Node.js 18+ 
-- npm, yarn, pnpm, or bun package manager
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/your-username/persn.dev.git
-cd persn.dev
-```
-
-2. Install dependencies:
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
+npm run dev        # http://localhost:3000
 ```
 
-3. Run the development server:
+Copy `.env.example` → `.env.local` and fill in the values to enable the
+live features (both are optional — the UI degrades gracefully without them):
+
+| Variable | Purpose |
+| --- | --- |
+| `APPLE_MUSIC_PRIVATE_KEY` | MusicKit private key (`\n`-escaped PEM) |
+| `APPLE_MUSIC_KEY_ID` | MusicKit key ID |
+| `APPLE_MUSIC_TEAM_ID` | Apple developer team ID |
+| `APPLE_MUSIC_USER_TOKEN` | Your Music-User-Token (recently-played scope) |
+| `PHONE_NUMBER` | Optional — adds a "Text" row on `/card` |
+
+## Structure
+
+```
+app/
+  page.tsx            Home — hero, work, about, contact
+  blog/               Blog list + [slug] MDX post pages
+  blog/posts/*.mdx    Posts (frontmatter: title, description, date, tags)
+  card/               Standalone shareable contact card (no site chrome)
+  api/apple-music/    Signs a dev token, proxies recent tracks
+  rss.xml, atom.xml   Feeds
+components/           Header, footer, recently-played, cards, icons, …
+lib/site.ts           Single source of truth for content (bio, projects, socials)
+```
+
+## Editing content
+
+- **Bio, projects, social links:** `lib/site.ts`
+- **Blog posts:** drop a new `.mdx` file in `app/blog/posts/`
+- **Colors / type / spacing tokens:** the `:root` block in `app/globals.css`
+  (the accent is a single `--accent` variable)
+
+## Build
+
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build && npm run start
 ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the website.
-
-### Development with Turbopack
-
-This project is configured to use Turbopack for faster development builds:
-
-```bash
-npm run dev
-```
-
-The `--turbopack` flag is already included in the dev script for optimal performance.
-
-## Available Scripts
-
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-## Contributing
-
-This is a personal portfolio website, but if you find bugs or have suggestions, feel free to open an issue or submit a pull request.
-
----
-
-Built with ❤️ by Joey Kerper

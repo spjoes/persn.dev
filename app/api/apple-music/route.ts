@@ -1,5 +1,7 @@
-import { NextResponse } from 'next/server';
-import { getDeveloperToken } from './token';
+import { NextResponse } from "next/server";
+import { getDeveloperToken } from "./token";
+
+export const dynamic = "force-dynamic";
 
 interface AppleMusicSong {
   id: string;
@@ -9,7 +11,7 @@ interface AppleMusicSong {
     artistName: string;
     albumName: string;
     url: string;
-    artwork: {
+    artwork?: {
       url: string;
       width: number;
       height: number;
@@ -17,27 +19,22 @@ interface AppleMusicSong {
   };
 }
 
-const RECENT_TRACKS_URL = 'https://api.music.apple.com/v1/me/recent/played/tracks?limit=5';
-const DEV_TOKEN_CHECK_URL = 'https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=1';
+const RECENT_TRACKS_URL =
+  "https://api.music.apple.com/v1/me/recent/played/tracks?limit=5";
+const DEV_TOKEN_CHECK_URL =
+  "https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=1";
 
 async function getAppleErrorMessage(response: Response) {
-  let errorDetail = '';
-
+  let errorDetail = "";
   try {
     const body = await response.json();
     const detail =
-      body?.errors?.[0]?.detail ??
-      body?.errors?.[0]?.title ??
-      body?.error;
-
-    if (typeof detail === 'string') {
-      errorDetail = detail;
-    }
+      body?.errors?.[0]?.detail ?? body?.errors?.[0]?.title ?? body?.error;
+    if (typeof detail === "string") errorDetail = detail;
   } catch {
-    // Ignore JSON parse errors and fall back to status text.
+    // fall back to status text
   }
-
-  return errorDetail || response.statusText || 'Unknown Apple Music API error';
+  return errorDetail || response.statusText || "Unknown Apple Music API error";
 }
 
 export async function GET() {
@@ -45,7 +42,7 @@ export async function GET() {
 
   if (!userToken) {
     return NextResponse.json(
-      { error: 'Apple Music user token not configured' },
+      { error: "Apple Music user token not configured" },
       { status: 500 }
     );
   }
@@ -56,9 +53,9 @@ export async function GET() {
     const response = await fetch(RECENT_TRACKS_URL, {
       headers: {
         Authorization: `Bearer ${developerToken}`,
-        'Music-User-Token': userToken,
+        "Music-User-Token": userToken,
       },
-      cache: 'no-store',
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -66,32 +63,28 @@ export async function GET() {
 
       if (response.status === 401 || response.status === 403) {
         const devTokenCheck = await fetch(DEV_TOKEN_CHECK_URL, {
-          headers: {
-            Authorization: `Bearer ${developerToken}`,
-          },
-          cache: 'no-store',
+          headers: { Authorization: `Bearer ${developerToken}` },
+          cache: "no-store",
         });
 
         if (devTokenCheck.ok) {
           return NextResponse.json(
             {
               error:
-                'Apple Music sync needs to be reauthorized. The stored APPLE_MUSIC_USER_TOKEN is no longer valid.',
+                "Apple Music sync needs to be reauthorized. The stored APPLE_MUSIC_USER_TOKEN is no longer valid.",
             },
             { status: 502 }
           );
         }
       }
 
-      console.error('Apple Music API request failed', {
+      console.error("Apple Music API request failed", {
         status: response.status,
         detail: appleError,
       });
 
       return NextResponse.json(
-        {
-          error: `Apple Music API request failed: ${appleError}`,
-        },
+        { error: `Apple Music API request failed: ${appleError}` },
         { status: 502 }
       );
     }
@@ -104,18 +97,16 @@ export async function GET() {
       artist: song.attributes.artistName,
       album: song.attributes.albumName,
       artworkUrl: song.attributes.artwork?.url
-        ? song.attributes.artwork.url
-            .replace('{w}', '600')
-            .replace('{h}', '600')
-        : '',
+        ? song.attributes.artwork.url.replace("{w}", "600").replace("{h}", "600")
+        : "",
       trackUrl: song.attributes.url,
     }));
 
     return NextResponse.json(tracks);
   } catch (error) {
-    console.error('Failed to fetch Apple Music data', error);
+    console.error("Failed to fetch Apple Music data", error);
     return NextResponse.json(
-      { error: 'Failed to fetch music data' },
+      { error: "Failed to fetch music data" },
       { status: 500 }
     );
   }

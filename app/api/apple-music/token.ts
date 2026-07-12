@@ -1,10 +1,14 @@
-import { SignJWT, importPKCS8 } from 'jose';
+import { SignJWT, importPKCS8 } from "jose";
 
-const TOKEN_DURATION = 15777000; // 6 months in seconds
+const TOKEN_DURATION = 15777000; // ~6 months in seconds
 
 let cachedToken: string | null = null;
 let tokenExpiry: number | null = null;
 
+/**
+ * Mints (and caches) an Apple Music developer token signed with the
+ * MusicKit private key. Valid up to 6 months; we refresh a minute early.
+ */
 export async function getDeveloperToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
 
@@ -17,16 +21,17 @@ export async function getDeveloperToken(): Promise<string> {
   const teamId = process.env.APPLE_MUSIC_TEAM_ID;
 
   if (!privateKey || !keyId || !teamId) {
-    throw new Error('Missing Apple Music developer credentials (APPLE_MUSIC_PRIVATE_KEY, APPLE_MUSIC_KEY_ID, APPLE_MUSIC_TEAM_ID)');
+    throw new Error(
+      "Missing Apple Music developer credentials (APPLE_MUSIC_PRIVATE_KEY, APPLE_MUSIC_KEY_ID, APPLE_MUSIC_TEAM_ID)"
+    );
   }
 
-  // Vercel stores multi-line env vars with literal \n — normalize them
-  const normalizedKey = privateKey.replace(/\\n/g, '\n');
-
-  const privateKeyImported = await importPKCS8(normalizedKey, 'ES256');
+  // Hosting providers often store multi-line secrets with literal \n.
+  const normalizedKey = privateKey.replace(/\\n/g, "\n");
+  const privateKeyImported = await importPKCS8(normalizedKey, "ES256");
 
   const jwt = await new SignJWT({})
-    .setProtectedHeader({ alg: 'ES256', kid: keyId })
+    .setProtectedHeader({ alg: "ES256", kid: keyId })
     .setIssuer(teamId)
     .setIssuedAt(now)
     .setExpirationTime(now + TOKEN_DURATION)

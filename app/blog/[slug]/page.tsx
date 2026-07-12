@@ -1,163 +1,118 @@
-import React from 'react';
-import { readdir, readFile } from 'fs/promises';
-import path from 'path';
-import matter from 'gray-matter';
-import { MDXRemote } from 'next-mdx-remote/rsc';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
-
-
-interface BlogPostMetadata {
-  title: string;
-  description: string;
-  date: string;
-  tags?: string[];
-}
+import type { Metadata } from "next";
+import { readdir } from "fs/promises";
+import path from "path";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import { getPost, formatDate } from "@/lib/posts";
+import { Icon } from "@/components/icons";
 
 interface BlogPostProps {
   params: Promise<{ slug: string }>;
 }
 
-async function getBlogPost(slug: string) {
-  const filePath = path.join(process.cwd(), 'app/blog/posts', `${slug}.mdx`);
-  
-  try {
-    const fileContents = await readFile(filePath, 'utf8');
-    const { data, content } = matter(fileContents);
-    
-    return {
-      metadata: data as BlogPostMetadata,
-      content,
-    };
-  } catch {
-    return null;
-  }
-}
-
 export async function generateStaticParams() {
-  const postsDirectory = path.join(process.cwd(), 'app/blog/posts');
-  
   try {
-    const filenames = await readdir(postsDirectory);
+    const dir = path.join(process.cwd(), "app/blog/posts");
+    const filenames = await readdir(dir);
     return filenames
-      .filter((name) => name.endsWith('.mdx'))
-      .map((filename) => ({
-        slug: filename.replace('.mdx', ''),
-      }));
+      .filter((name) => name.endsWith(".mdx"))
+      .map((filename) => ({ slug: filename.replace(".mdx", "") }));
   } catch {
     return [];
   }
 }
 
-export async function generateMetadata({ params }: BlogPostProps) {
+export async function generateMetadata({
+  params,
+}: BlogPostProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getBlogPost(slug);
-  
-  if (!post) {
-    return {
-      title: 'Post Not Found',
-    };
-  }
-
+  const post = await getPost(slug);
+  if (!post) return { title: "Post not found" };
   return {
-    title: `${post.metadata.title} | Joseph Kerper`,
-    description: post.metadata.description,
+    title: post.title,
+    description: post.description,
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.description,
+    },
   };
 }
 
-const components = {
-  h1: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h1 className="mb-6 text-3xl font-bold tracking-tight md:text-4xl" {...props} />
-  ),
-  h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h2 className="mb-4 mt-8 text-2xl font-semibold tracking-tight md:text-3xl" {...props} />
-  ),
-  h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-    <h3 className="mb-3 mt-6 text-xl font-semibold tracking-tight md:text-2xl" {...props} />
-  ),
-  p: (props: React.HTMLAttributes<HTMLParagraphElement>) => <p className="mb-4 leading-7 text-zinc-300" {...props} />,
-  ul: (props: React.HTMLAttributes<HTMLUListElement>) => <ul className="mb-4 ml-6 list-disc space-y-2" {...props} />,
-  ol: (props: React.HTMLAttributes<HTMLOListElement>) => <ol className="mb-4 ml-6 list-decimal space-y-2" {...props} />,
-  li: (props: React.HTMLAttributes<HTMLLIElement>) => <li className="leading-7 text-zinc-300" {...props} />,
-  blockquote: (props: React.HTMLAttributes<HTMLQuoteElement>) => (
-    <blockquote 
-      className="mb-4 border-l-4 border-zinc-600 pl-4 italic text-zinc-400" 
-      {...props} 
-    />
-  ),
-  code: (props: React.HTMLAttributes<HTMLElement>) => (
-    <code 
-      className="rounded bg-zinc-800 px-1 py-0.5 text-sm font-mono text-zinc-300" 
-      {...props} 
-    />
-  ),
-  pre: (props: React.HTMLAttributes<HTMLPreElement>) => (
-    <pre 
-      className="mb-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm" 
-      {...props} 
-    />
-  ),
-  a: (props: React.HTMLAttributes<HTMLAnchorElement>) => (
-    <a 
-      className="text-blue-400 underline hover:text-blue-300" 
-      {...props} 
-    />
-  ),
-};
-
 export default async function BlogPost({ params }: BlogPostProps) {
   const { slug } = await params;
-  const post = await getBlogPost(slug);
-
-  if (!post) {
-    notFound();
-  }
+  const post = await getPost(slug);
+  if (!post) notFound();
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-12">
-      <Link 
-        href="/blog"
-        className="mb-8 inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-300"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-          <path d="m12 19-7-7 7-7"/>
-          <path d="M19 12H5"/>
-        </svg>
-        Back to blog
-      </Link>
-      
-      <header className="mb-8">
-        <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl">
-          {post.metadata.title}
-        </h1>
-        
-        <div className="flex items-center gap-4 text-sm text-zinc-500">
-          <time dateTime={post.metadata.date}>
-            {new Date(post.metadata.date).toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric',
-            })}
-          </time>
-          
-          {post.metadata.tags && post.metadata.tags.length > 0 && (
-            <div className="flex gap-2">
-              {post.metadata.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-zinc-800 px-3 py-1 text-xs"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </header>
+    <div className="mx-auto w-full max-w-7xl px-6 py-16 sm:px-10">
+      <div className="grid gap-10 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16">
+        {/* Meta sidebar */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <Link
+            href="/blog"
+            className="group inline-flex items-center gap-2 text-sm text-[var(--ink-faint)] transition-colors hover:text-[var(--ink)]"
+          >
+            <Icon.arrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to blog
+          </Link>
 
-      <div className="prose prose-zinc prose-invert max-w-none">
-        <MDXRemote source={post.content} components={components} />
+          <dl className="mt-8 space-y-6 border-t border-[var(--line)] pt-6">
+            <div>
+              <dt className="eyebrow mb-2">Published</dt>
+              <dd className="font-mono text-sm text-[var(--ink)]">
+                <time dateTime={post.date}>{formatDate(post.date)}</time>
+              </dd>
+            </div>
+            {post.tags.length > 0 && (
+              <div>
+                <dt className="eyebrow mb-2">Tags</dt>
+                <dd className="flex flex-wrap gap-1.5">
+                  {post.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-md border border-[var(--line)] px-2 py-0.5 font-mono text-[11px] text-[var(--ink-faint)]"
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </aside>
+
+        {/* Article */}
+        <article className="min-w-0">
+          <header className="mb-10">
+            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+              {post.title}
+            </h1>
+            {post.description && (
+              <p className="mt-4 max-w-2xl text-lg text-[var(--ink-dim)]">
+                {post.description}
+              </p>
+            )}
+          </header>
+
+          <hr className="rule mb-10" />
+
+          <div className="prose max-w-[72ch]">
+            <MDXRemote source={post.content} />
+          </div>
+
+          <hr className="rule my-12" />
+
+          <Link
+            href="/blog"
+            className="group inline-flex items-center gap-2 text-sm text-[var(--ink-faint)] transition-colors hover:text-[var(--ink)]"
+          >
+            <Icon.arrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            All posts
+          </Link>
+        </article>
       </div>
-    </article>
+    </div>
   );
-} 
+}

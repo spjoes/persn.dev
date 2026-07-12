@@ -1,32 +1,295 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ *
+ *  persn.dev — design tokens
+ *  Near-monochrome, deep dark. One restrained cool accent.
+ * ------------------------------------------------------------------ */
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  --color-bg: #08080a;
+  --color-bg-soft: #0d0d10;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-strong: rgba(255, 255, 255, 0.14);
+  --color-ink: #ededee;
+  --color-ink-dim: #a1a1aa;
+  --color-ink-faint: #6b6b74;
+  --color-accent: #8b9dff; /* whisper of periwinkle — used sparingly */
+}
+
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --bg: #08080a;
+  --bg-soft: #0d0d10;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --ink: #ededee;
+  --ink-dim: #a1a1aa;
+  --ink-faint: #6b6b74;
+  --accent: #8b9dff;
+  --accent-soft: rgba(139, 157, 255, 0.14);
+  --nav-h: 56px;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 24px);
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
 }
 
-@layer utilities {
-  .perspective {
-    perspective: 1000px;
-  }
+/* A very quiet vignette + grain gives the flat dark some depth */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(139, 157, 255, 0.05), transparent 60%),
+    radial-gradient(100% 60% at 50% 110%, rgba(255, 255, 255, 0.02), transparent 70%);
+  pointer-events: none;
+}
 
-  .preserve-3d {
-    transform-style: preserve-3d;
-  }
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
 
-  .backface-hidden {
-    backface-visibility: hidden;
-  }
+::selection {
+  background: rgba(139, 157, 255, 0.28);
+  color: #fff;
+}
 
-  .rotate-y-180 {
-    transform: rotateY(180deg);
+/* Focus — visible only for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: padding-box;
+}
+html {
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Reusable primitives
+ * ------------------------------------------------------------------ */
+
+/* Eyebrow / section label — mono, tracked, dim */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Underline-on-hover link used in prose / inline */
+.link {
+  color: var(--ink);
+  text-decoration: none;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  transition: background-size 0.3s ease, color 0.2s ease;
+}
+.link:hover {
+  color: #fff;
+  background-size: 100% 1px;
+}
+
+/* A hairline that fades at the edges */
+.rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+}
+
+/* Hide scrollbar (used by the mobile album rail) while keeping scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Reveal-on-scroll (JS toggles .is-in) */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  Blog prose
+ * ------------------------------------------------------------------ */
+.prose {
+  color: var(--ink-dim);
+  font-size: 1.02rem;
+  line-height: 1.8;
+}
+.prose > * + * {
+  margin-top: 1.15em;
+}
+.prose h1,
+.prose h2,
+.prose h3 {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.prose h1 {
+  font-size: 2rem;
+  margin-top: 2.5em;
+}
+.prose h2 {
+  font-size: 1.5rem;
+  margin-top: 2.4em;
+}
+.prose h3 {
+  font-size: 1.2rem;
+  margin-top: 2em;
+}
+/* first content block shouldn't push away from the divider */
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose p {
+  color: var(--ink-dim);
+}
+.prose strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.prose a {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s;
+}
+.prose a:hover {
+  text-decoration-color: #fff;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.3em;
+}
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose li {
+  margin-top: 0.4em;
+  color: var(--ink-dim);
+}
+.prose li::marker {
+  color: var(--ink-faint);
+}
+.prose blockquote {
+  border-left: 2px solid var(--accent);
+  padding-left: 1.1em;
+  color: var(--ink-dim);
+  font-style: italic;
+}
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  padding: 0.12em 0.4em;
+  border-radius: 5px;
+  color: #e7e7ea;
+}
+.prose pre {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  overflow-x: auto;
+  font-size: 0.88rem;
+}
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.prose hr {
+  border: 0;
+  height: 1px;
+  background: var(--line);
+  margin: 2.5em 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
