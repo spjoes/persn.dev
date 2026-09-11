@@ -6,21 +6,25 @@ export const dynamic = "force-dynamic";
 interface AppleMusicSong {
   id: string;
   type: string;
-  attributes: {
+  attributes?: {
     name: string;
     artistName: string;
-    albumName: string;
-    url: string;
+    albumName?: string;
+    url?: string;
     artwork?: {
       url: string;
       width: number;
       height: number;
     };
   };
+  relationships?: {
+    catalog?: { data: AppleMusicSong[] };
+  };
 }
 
+// Explicitly include library plays and their public catalog metadata.
 const RECENT_TRACKS_URL =
-  "https://api.music.apple.com/v1/me/recent/played/tracks?limit=5";
+  "https://api.music.apple.com/v1/me/recent/played/tracks?limit=5&types=songs,library-songs&include[library-songs]=catalog";
 const DEV_TOKEN_CHECK_URL =
   "https://api.music.apple.com/v1/catalog/us/charts?types=songs&limit=1";
 
@@ -92,15 +96,24 @@ export async function GET() {
     const data = await response.json();
     const songs: AppleMusicSong[] = data.data ?? [];
 
-    const tracks = songs.map((song) => ({
-      name: song.attributes.name,
-      artist: song.attributes.artistName,
-      album: song.attributes.albumName,
-      artworkUrl: song.attributes.artwork?.url
-        ? song.attributes.artwork.url.replace("{w}", "600").replace("{h}", "600")
-        : "",
-      trackUrl: song.attributes.url,
-    }));
+    const tracks = songs.map((song) => {
+      const catalogSong = song.type === "library-songs"
+        ? song.relationships?.catalog?.data?.[0]
+        : undefined;
+      const attributes = { ...song.attributes, ...catalogSong?.attributes };
+
+      return {
+        id: catalogSong?.id ?? song.id,
+        name: attributes.name ?? "Unknown song",
+        artist: attributes.artistName ?? "Unknown artist",
+        album: attributes.albumName ?? "",
+        artworkUrl: attributes.artwork?.url
+          ? attributes.artwork.url.replace("{w}", "600").replace("{h}", "600")
+          : "",
+        // Uploaded or unmatched library songs may have no public catalog URL.
+        trackUrl: attributes.url ?? null,
+      };
+    });
 
     return NextResponse.json(tracks);
   } catch (error) {

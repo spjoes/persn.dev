@@ -5,11 +5,12 @@ import Image from "next/image";
 import { Icon } from "./icons";
 
 interface AppleMusicTrack {
+  id: string;
   name: string;
   artist: string;
   album: string;
   artworkUrl: string;
-  trackUrl: string;
+  trackUrl: string | null;
 }
 
 interface AlbumPalette {
@@ -457,19 +458,19 @@ export function RecentlyPlayed() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      const pending = tracks.filter((t) => t.artworkUrl && !palettes[t.trackUrl]);
+      const pending = tracks.filter((t) => t.artworkUrl && !palettes[t.id]);
       if (pending.length === 0) return;
       const results = await Promise.all(
         pending.map(async (t) => ({
-          trackUrl: t.trackUrl,
+          id: t.id,
           palette: await extractAlbumPalette(t.artworkUrl),
         }))
       );
       if (cancelled) return;
       setPalettes((prev) => {
         const next = { ...prev };
-        for (const { trackUrl, palette } of results) {
-          next[trackUrl] = palette ?? FALLBACK_PALETTE;
+        for (const { id, palette } of results) {
+          next[id] = palette ?? FALLBACK_PALETTE;
         }
         return next;
       });
@@ -538,7 +539,7 @@ export function RecentlyPlayed() {
 
       <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
         {tracks.map((track, index) => {
-          const palette = palettes[track.trackUrl] ?? FALLBACK_PALETTE;
+          const palette = palettes[track.id] ?? FALLBACK_PALETTE;
           const albumVars = {
             "--album-border": palette.borderColor,
             "--album-glow": palette.glowColor,
@@ -546,8 +547,8 @@ export function RecentlyPlayed() {
           } as CSSProperties;
           return (
             <a
-              key={track.trackUrl}
-              href={track.trackUrl}
+              key={`${track.id}-${index}`}
+              href={track.trackUrl ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               style={albumVars}
